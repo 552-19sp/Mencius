@@ -21,7 +21,6 @@ void *get_in_addr(struct sockaddr *sa) {
     if (sa->sa_family == AF_INET) {
         return &(((struct sockaddr_in*)sa)->sin_addr);
     }
-
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
@@ -80,10 +79,7 @@ int main(int argc, char *argv[]) {
     }
 
     buf[numbytes] = '\0';
-
     printf("client: received '%s'\n",buf);
-
     close(sockfd);
-
     return 0;
 }
