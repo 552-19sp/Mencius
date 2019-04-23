@@ -9,3 +9,9 @@ jobs:
             - run:
                 name: Installing GCC
                 command: 'apt-get update && apt-get install -y gcc g++'
+            - run:
+                name: Installing Essentials
+                command: 'apt-get install -y build-essential' 
+            - run:
+                name: Build Binaries
+                command: 'make all'
