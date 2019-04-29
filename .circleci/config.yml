@@ -14,7 +14,7 @@ jobs:
                 command: 'apt-get install -y build-essential' 
             - run:
                 name: Install wget
-                command: 'apt-get install wget' 
+                command: 'apt-get install -y wget' 
             - run:
                 name: Download Boost 1.68.0
                 command: 'wget https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.bz2' 
