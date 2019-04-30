@@ -19,11 +19,8 @@ jobs:
                 name: Download Boost 1.68.0
                 command: 'wget https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.bz2' 
             - run:
-                name: ls
-                command: 'ls' 
-            - run:
                 name: untar Boost
-                command: 'tar --bzip2 -xf boost_1_68_0' 
+                command: 'tar --bzip2 -xf boost_1_68_0.tar.bz2' 
             - run:
                 name: cd into Boost
                 command: 'cd boost_1_68_0.tar.bz2' 
