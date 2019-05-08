@@ -14,7 +14,10 @@ jobs:
                 command: 'sudo apt-get install -y software-properties-common'   
             - run:
                 name: Install Boost
-                command: 'sudo apt-get install libboost-all-dev'
+                command: |
+                    sudo add-apt-repository ppa:mhier/libboost-latest
+                    sudo apt-get update
+                    sudo apt-get install libboost1.68-dev
             - run:
                 name: Building Binaries
                 command: 'make all'

@@ -3,7 +3,7 @@ SERVER_TARGET = server
 
 CC = g++
 CFLAGS = -Wall -g -std=c++14
-LIBS = -L/usr/include/boost -lboost_system -lboost_chrono
+LIBS = -pthread -L/usr/include/boost -lboost_system -lboost_chrono
 PROGS = all
 
 SRCDIR = src
