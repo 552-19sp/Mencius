@@ -3,7 +3,6 @@ jobs:
     build:
         docker:
             - image:  circleci/buildpack-deps:bionic
-
         steps:
             - checkout
             - run:
@@ -19,16 +18,22 @@ jobs:
                     sudo apt-get update
                     sudo apt-get install libboost1.68-dev
             - run:
-                name: Building Binaries
+                name: Build Binaries
                 command: 'make all'
     static-analysis:
         docker:
-            - image: debian:stretch
+            - image: circleci/buildpack-deps:bionic 
         steps:
             - checkout
             - run:
-                name: Installing cppcheck
-                command: 'apt-get install cppcheck'   
+                name: Install cppcheck
+                command: 'sudo apt-get install cppcheck'   
             - run:
-                name: Running cppcheck
-                command: 'cppcheck --error-exitcode=1 *.cpp'
+                name: Run cppcheck
+                command: 'cppcheck --error-exitcode=1 src'
+workflows:
+    version: 2
+    build_and_analyze:
+        jobs:
+            - build
+            - static-analysis
