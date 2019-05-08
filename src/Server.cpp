@@ -1,34 +1,42 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
-void print(const boost::system::error_code &/*e*/,
-        boost::asio::deadline_timer *t, int *count) {
-    if (*count < 5) {
-        std::cout << *count << std::endl;
-        ++(*count);
+class printer {
+public:
+  printer(boost::asio::io_service& io)
+      : timer_(io, boost::asio::chrono::seconds(1)),
+      count_(0) {
+    timer_.async_wait(boost::bind(&printer::print, this));
+  }
 
-        t->expires_at(t->expires_at() + boost::posix_time::seconds(1));
+  ~printer() {
+    std::cout << "Final count is " << count_ << std::endl;
+  }
 
-        t->async_wait(boost::bind(print, boost::asio::placeholders::error, t, count));
+  void print() {
+    if (count_ < 5) {
+      std::cout << count_ << std::endl;
+      ++count_;
+
+      timer_.expires_at(timer_.expires_at() + boost::asio::chrono::seconds(1));
+      timer_.async_wait(boost::bind(&printer::print, this));
     }
-}
+  }
+
+private:
+  boost::asio::steady_timer timer_;
+  int count_;
+};
 
 int main() {
-    std::cout << "Server starting..." << std::endl;
+  std::cout << "Server starting..." << std::endl;
 
-    boost::asio::io_service io;
+  boost::asio::io_context io;
+  printer p(io);
 
-    int count = 0;
-    boost::asio::deadline_timer t(io, boost::posix_time::seconds(1));
+  // This blocks until all the work is done.
+  io.run();
 
-    t.async_wait(boost::bind(print, boost::asio::placeholders::error, &t, &count));
-
-    // This blocks until all the work is done.
-    io.run();
-
-    std::cout << "Final count is " << count << std::endl;
-
-    return 0;
+  return 0;
 }
