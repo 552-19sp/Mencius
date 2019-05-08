@@ -16,30 +16,6 @@ jobs:
                 name: Install Boost
                 command: 'sudo apt-get install libboost-all-dev'
             - run:
-                name: Install wget
-                command: 'apt-get install -y wget' 
-            - run:
-                name: Download Boost 1.68.0
-                command: 'wget https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.bz2' 
-            - run:
-                name: untar Boost
-                command: 'tar --bzip2 -xf boost_1_68_0.tar.bz2' 
-            - run:
-                name: cd into Boost
-                command: 'cd boost_1_68_0.tar.bz2' 
-            - run:
-                name: bootstrap Boost
-                command: './bootstrap.sh -prefix=/root/project/boost --with-libraries=chrono,thread' 
-            - run:
-                name: install Boost libraries
-                command: './b2 install' 
-            - run:
-                name: pwd
-                command: 'ls; pwd' 
-            - run:
-                name: cd up one level
-                command: 'cd ..' 
-            - run:
                 name: Building Binaries
                 command: 'make all'
     static-analysis:
