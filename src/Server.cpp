@@ -1,42 +1,91 @@
+#include <ctime>
 #include <iostream>
-#include <boost/asio.hpp>
+#include <string>
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/asio.hpp>
 
-class printer {
+using boost::asio::ip::tcp;
+
+std::string make_daytime_string() {
+  std::time_t now = std::time(0);
+  return std::ctime(&now);
+}
+
+class tcp_connection
+  : public boost::enable_shared_from_this<tcp_connection> {
 public:
-  printer(boost::asio::io_service& io)
-      : timer_(io, boost::asio::chrono::seconds(1)),
-      count_(0) {
-    timer_.async_wait(boost::bind(&printer::print, this));
+  typedef boost::shared_ptr<tcp_connection> pointer;
+
+  static pointer create(boost::asio::io_context& io_context) {
+    return pointer(new tcp_connection(io_context));
   }
 
-  ~printer() {
-    std::cout << "Final count is " << count_ << std::endl;
+  tcp::socket& socket() {
+    return socket_;
   }
 
-  void print() {
-    if (count_ < 5) {
-      std::cout << count_ << std::endl;
-      ++count_;
+  void start() {
+    message_ = make_daytime_string();
 
-      timer_.expires_at(timer_.expires_at() + boost::asio::chrono::seconds(1));
-      timer_.async_wait(boost::bind(&printer::print, this));
-    }
+    boost::asio::async_write(socket_, boost::asio::buffer(message_),
+      boost::bind(&tcp_connection::handle_write, shared_from_this()));
   }
 
 private:
-  boost::asio::steady_timer timer_;
-  int count_;
+  tcp_connection(boost::asio::io_context& io_context)
+      : socket_(io_context) {
+  }
+
+  void handle_write() {
+  }
+
+  tcp::socket socket_;
+  std::string message_;
+};
+
+class tcp_server {
+public:
+  tcp_server(boost::asio::io_context& io_context)
+      : io_context_(io_context),
+        acceptor_(io_context, tcp::endpoint(tcp::v4(), 13)) {
+    start_accept();
+  }
+
+private:
+  void start_accept() {
+    tcp_connection::pointer new_connection =
+      tcp_connection::create(io_context_);
+
+    acceptor_.async_accept(new_connection->socket(),
+      boost::bind(&tcp_server::handle_accept, this, new_connection,
+        boost::asio::placeholders::error));
+  }
+
+  void handle_accept(tcp_connection::pointer new_connection,
+      const boost::system::error_code& error) {
+    std::cout << "Handling client..." << std::endl;
+    if (!error) {
+      new_connection->start();
+    }
+
+    start_accept();
+  }
+
+  boost::asio::io_context& io_context_;
+  tcp::acceptor acceptor_;
 };
 
 int main() {
-  std::cout << "Server starting..." << std::endl;
+  try {
+    boost::asio::io_context io_context;
+    tcp_server server(io_context);
 
-  boost::asio::io_context io;
-  printer p(io);
-
-  // This blocks until all the work is done.
-  io.run();
+    io_context.run();
+  } catch (std::exception& e) {
+    std::cerr << e.what() << std::endl;
+  }
 
   return 0;
 }
