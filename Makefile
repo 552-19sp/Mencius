@@ -3,6 +3,7 @@ SERVER_TARGET = server
 
 CC = g++
 CFLAGS = -Wall -g -std=c++14
+LIBS = -L/usr/include/boost -lboost_system -lboost_chrono
 PROGS = all
 
 SRCDIR = src
@@ -23,10 +24,10 @@ SERVER_OBJ = $(SERVER_SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 all: $(CLIENT_TARGET) $(SERVER_TARGET)
 
 $(CLIENT_TARGET): $(CLIENT_OBJ)
-	$(CC) $^ -o $(BINDIR)/$@
+	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
 $(SERVER_TARGET): $(SERVER_OBJ)
-	$(CC) $^ -o $(BINDIR)/$@
+	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR) $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
