@@ -1,5 +1,5 @@
-# Executes all of the test specifed in /cases. For test format,
-# please see README.
+""" Executes all of the test specifed in /cases. For test format,
+    please see README. """
 
 import os
 import subprocess
@@ -11,48 +11,55 @@ CLIENT_PROCS = []  # List of client subprocesses.
 
 
 def pass_test(filename):
+    """ Handles the "pass" case for the current test.
+        filename -- name of current test file """
     print("{} PASSED\n".format(filename))
 
 
 def fail_test(filename, err_msg):
+    """ Handles the "fail" case for the current test.
+        filename -- name of current test file
+        err_msg -- descriptin of why test failed """
     print("{} FAILED: {}\n".format(filename, err_msg))
 
 
-def run_server(server_ports, client_num, ops):
-    # Spawn a subprocess running with provided params.
-    # TODO(justin): Provide client with server_ports, client_name, and ops.
+def run_server():
+    """ Runs a new client as a subprocess. """
     cmd = "../bin/client"
     CLIENT_PROCS.append(subprocess.Popen(cmd))
 
 
-def clean_op(s):
-    # Clean every op by removing the preceding 'C#: ' and final \n.
-    return (s.split(None, 1)[1]).rstrip("\n")
+def clean_op(dirty_op):
+    """ Clean op by removing the preceding 'C#: ' and final \n. """
+    return (dirty_op.split(None, 1)[1]).rstrip("\n")
 
 
 def test_case(filename):
+    """ Run a test for a test case.
+        filename -- name of current test file """
     # Parse test file for setup information.
-    with open(filename) as f:
+    with open(filename) as test_file:
         # Parse test file for setup information.
-        server_port_str = f.readline()
-        server_port = int(server_port_str.split()[2])
+        # This is temporary. Need to read past the SERVER PORTS to get
+        # to the num_clients.
+        _ = test_file.readline()
 
-        clients_str = f.readline()
+        clients_str = test_file.readline()
         num_clients = int(clients_str.split()[1])
-        
-        ops = f.readlines()
+
+        # This will be used to read in all operations from the test file.
+        # ops = test_file.readlines()
 
         # Run every client as subprocess.
-        for client_num in range(num_clients):
-            client_ops = [op for op in ops if "C{}:".format(client_num) in op]
-            clean_client_ops = list(map(clean_op, client_ops))
-            run_server(server_port, client_num, clean_client_ops)
+        for _ in range(num_clients):
+            # This will be used to filter ops based on clients.
+            # client_ops = [op for op in ops if "C{}:".format(client_num) in op]
+            run_server()
 
         # Allow clients to finish workloads.
-        # TODO(justin): Consider configuring this on a per test basis.
         time.sleep(MAX_TEST_TIME)
         clients_finished = True
-        
+
         # Kill any clients still alive (and fail test)
         for proc in CLIENT_PROCS:
             if proc.poll() is None:
@@ -63,13 +70,11 @@ def test_case(filename):
             fail_test(filename, "workloads did not finish")
             return False
 
-        # TODO(justin): Check for serializability here.
-        
         pass_test(filename)
         return True
 
-
-if __name__ == "__main__":
+def run_tests():
+    """ Run all tests specified in the cases directory. """
     # Keep track if a test fails.
     all_tests_passed = True
 
@@ -85,3 +90,6 @@ if __name__ == "__main__":
     # If tests did not pass, exit with an error.
     if not all_tests_passed:
         sys.exit(1)
+
+if __name__ == "__main__":
+    run_tests()
