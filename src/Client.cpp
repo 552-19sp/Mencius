@@ -6,8 +6,8 @@ using boost::asio::ip::tcp;
 
 int main(int argc, char* argv[]) {
   try {
-    if (argc != 2) {
-      std::cerr << "Usage: client <host>" << std::endl;
+    if (argc != 3) {
+      std::cerr << "Usage: client <host> <port>" << std::endl;
       return 1;
     }
 
@@ -15,10 +15,12 @@ int main(int argc, char* argv[]) {
 
     tcp::resolver resolver(io_context);
     tcp::resolver::results_type endpoints =
-      resolver.resolve(argv[1], "daytime");
+      resolver.resolve(argv[1], argv[2]);
 
     tcp::socket socket(io_context);
     boost::asio::connect(socket, endpoints);
+
+    std::cout << socket.remote_endpoint().port() << std::endl;
 
     for (;;) {
       boost::array<char, 128> buf;

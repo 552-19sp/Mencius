@@ -47,9 +47,9 @@ private:
 
 class tcp_server {
 public:
-  tcp_server(boost::asio::io_context& io_context)
+  tcp_server(boost::asio::io_context& io_context, int port)
       : io_context_(io_context),
-        acceptor_(io_context, tcp::endpoint(tcp::v4(), 13)) {
+        acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
     start_accept();
   }
 
@@ -77,10 +77,17 @@ private:
   tcp::acceptor acceptor_;
 };
 
-int main() {
+int main(int argc, char* argv[]) {
   try {
+    if (argc != 2) {
+      std::cerr << "Usage: server <port>" << std::endl;
+      return 1;
+    }
+
+    int port = std::stoi(argv[1]);
+
     boost::asio::io_context io_context;
-    tcp_server server(io_context);
+    tcp_server server(io_context, port);
 
     io_context.run();
   } catch (std::exception& e) {
