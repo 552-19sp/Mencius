@@ -1,0 +1,10 @@
+SERVER PORTS 8080
+CLIENTS 1
+
+# Basic Put-Get Test
+C0: PUT key1 A
+C0: GET key1
+
+# Basic Append-Get Test
+C0: APPEND key1 B
+C0: GET key1
