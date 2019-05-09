@@ -10,6 +10,15 @@ SRCDIR = src
 OBJDIR = obj
 BINDIR = bin
 
+# On Mac, Boost is installed through brew, so the
+# explicit linking of the libraries is not needed.
+ifneq ($(OS),Windows_NT)
+    UNAME := $(shell uname -s)
+    ifeq ($(UNAME),Darwin)
+        LIBS = # empty on Mac
+    endif
+endif
+
 # Since we need two executables (but right now each
 # is just a single file), use two separate rules.
 # If they ever grow  to be multiple files, can move
