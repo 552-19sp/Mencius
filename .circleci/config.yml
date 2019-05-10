@@ -31,6 +31,15 @@ jobs:
             - run:
                 name: Run cppcheck
                 command: 'cppcheck --error-exitcode=1 src'
+            - run:
+                name: Install Pip
+                command: 'sudo apt install python3-pip' 
+            - run:
+                name: Install PyLint
+                command: 'sudo pip3 install pylint'
+            - run:
+                name: Run Pylint
+                command: 'pylint test/test_main.py'
 workflows:
     version: 2
     build_and_analyze:
