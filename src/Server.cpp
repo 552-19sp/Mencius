@@ -29,6 +29,8 @@ public:
   void start() {
     message_ = make_daytime_string();
 
+    std::cout << "Client connected -- " << socket_.remote_endpoint() << std::endl;
+
     boost::asio::async_write(socket_, boost::asio::buffer(message_),
       boost::bind(&tcp_connection::handle_write, shared_from_this()));
   }
@@ -65,7 +67,6 @@ private:
 
   void handle_accept(tcp_connection::pointer new_connection,
       const boost::system::error_code& error) {
-    std::cout << "Handling client..." << std::endl;
     if (!error) {
       new_connection->start();
     }
