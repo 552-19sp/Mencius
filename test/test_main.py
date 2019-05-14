@@ -63,6 +63,10 @@ def test_case(filename):
             if proc.poll() is None:
                 clients_finished = False
                 proc.kill()
+            proc.communicate()
+            if proc.returncode != 0:
+                fail_test(filename, "server exited with non-zero rc")
+                return False
 
         if not clients_finished:
             fail_test(filename, "workloads did not finish")
