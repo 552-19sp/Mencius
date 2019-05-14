@@ -23,10 +23,12 @@ def fail_test(filename, err_msg):
     print("{} FAILED: {}\n".format(filename, err_msg))
 
 
-def run_server():
+def run_server(operations):
     """ Runs a new client as a subprocess. """
+    seperator = ","
+    joined_ops = seperator.join(operations)
     cmd = "../bin/client"
-    CLIENT_PROCS.append(subprocess.Popen(cmd))
+    CLIENT_PROCS.append(subprocess.Popen((cmd, joined_ops)))
 
 
 def clean_op(dirty_op):
@@ -40,21 +42,17 @@ def test_case(filename):
     # Parse test file for setup information.
     with open(filename) as test_file:
         # Parse test file for setup information.
-        # This is temporary. Need to read past the SERVER PORTS to get
-        # to the num_clients.
-        _ = test_file.readline()
-
         clients_str = test_file.readline()
         num_clients = int(clients_str.split()[1])
 
         # This will be used to read in all operations from the test file.
-        # ops = test_file.readlines()
+        ops = test_file.readlines()
 
         # Run every client as subprocess.
-        for _ in range(num_clients):
+        for client_num in range(num_clients):
             # This will be used to filter ops based on clients.
-            # client_ops = [op for op in ops if "C{}:".format(client_num) in op]
-            run_server()
+            client_ops = [op for op in ops if "C{}:".format(client_num) in op]
+            run_server(list(map(clean_op, client_ops)))
 
         # Allow clients to finish workloads.
         time.sleep(MAX_TEST_TIME)

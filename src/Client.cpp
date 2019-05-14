@@ -1,8 +1,8 @@
 #include <iostream>
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
-#include <tuple>
 #include <fstream>
+#include <string>
 
 using boost::asio::ip::tcp;
 
@@ -12,12 +12,20 @@ const int MAX_CONFIG_LINE_LEN = 255;
 // Assume that amount of data read from socket <= 128 bytes.
 const int MAX_SOCKET_DATA_LEN = 128;
 
+// Location of config file storing host and port pairs.
+const char *CONFIG_FILE_PATH = "config";
+
 int main(int argc, char* argv[]) {
   try {
+    if (argc != 2) {
+      std::cerr << "Usage: client <operations>" << std::endl;
+      return 1;
+    }
+    
     // Read list of host names and ports from config file.
     std::vector<std::tuple<const char*, const char*>> serverAddresses;
    
-    std::ifstream configFile("config");
+    std::ifstream configFile(CONFIG_FILE_PATH);
     if (!configFile) {
       std::cout << "cannot open config file" << std::endl;
       return 1;
@@ -33,6 +41,22 @@ int main(int argc, char* argv[]) {
         auto port = line.substr(pos + 1);
         serverAddresses.push_back(std::make_tuple(host.c_str(), port.c_str()));
       }
+    }
+
+    // Parse operations from command argument.
+    char* unparsed_ops = argv[1];
+    std::vector<std::string> parsed_ops;
+    char* token = strtok(unparsed_ops, ",");
+
+    while (token != NULL) {
+      parsed_ops.push_back(std::string(token));
+      token = strtok(NULL, ",");
+    }
+
+    // For now, print ops to cout. Eventually, they will be printed
+    // to an output file after completion.
+    for (int i = 0; i < parsed_ops.size(); i++) {
+      std::cout << parsed_ops[i] << std::endl;
     }
 
     boost::asio::io_context io_context;
