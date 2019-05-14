@@ -13,7 +13,7 @@ const int MAX_CONFIG_LINE_LEN = 255;
 const int MAX_SOCKET_DATA_LEN = 128;
 
 // Location of config file storing host and port pairs.
-const char *CONFIG_FILE_PATH = "config";
+const char *CONFIG_FILE_PATH = "../config";
 
 int main(int argc, char* argv[]) {
   try {
