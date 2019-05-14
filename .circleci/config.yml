@@ -1,8 +1,8 @@
 version: 2
 jobs:
-    build:
+    build-and-test:
         docker:
-            - image:  circleci/buildpack-deps:bionic
+            - image: circleci/buildpack-deps:bionic
         steps:
             - checkout
             - run:
@@ -20,6 +20,12 @@ jobs:
             - run:
                 name: Build Binaries
                 command: 'make all'
+            - run:
+                name: Install Python
+                command: 'sudo apt-get update && sudo apt-get install python3'
+            - run:
+                name: Run Integration Tests
+                command: 'make all && cd test && python test_main.py'
     static-analysis:
         docker:
             - image: circleci/buildpack-deps:bionic 
@@ -42,7 +48,9 @@ jobs:
                 command: 'pylint test/test_main.py'
 workflows:
     version: 2
-    build_and_analyze:
+    build_and_test:
         jobs:
-            - build
+            - build-and-test
+    static_analysis:
+        jobs:
             - static-analysis
