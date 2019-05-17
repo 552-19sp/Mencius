@@ -1,3 +1,4 @@
+// Copyright 2019 Justin Johnson, Lukas Joswiak, and Jack Khuu
 #include <ctime>
 #include <iostream>
 #include <string>
@@ -15,7 +16,7 @@ std::string make_daytime_string() {
 
 class tcp_connection
   : public boost::enable_shared_from_this<tcp_connection> {
-public:
+ public:
   typedef boost::shared_ptr<tcp_connection> pointer;
 
   static pointer create(boost::asio::io_context& io_context) {
@@ -29,16 +30,16 @@ public:
   void start() {
     message_ = make_daytime_string();
 
-    std::cout << "Client connected -- " << socket_.remote_endpoint() << std::endl;
+    std::cout << "Client connected -- "
+        << socket_.remote_endpoint() << std::endl;
 
     boost::asio::async_write(socket_, boost::asio::buffer(message_),
       boost::bind(&tcp_connection::handle_write, shared_from_this()));
   }
 
-private:
-  tcp_connection(boost::asio::io_context& io_context)
-      : socket_(io_context) {
-  }
+ private:
+  explicit tcp_connection(boost::asio::io_context& io_context)
+      : socket_(io_context) {}
 
   void handle_write() {
   }
@@ -48,14 +49,14 @@ private:
 };
 
 class tcp_server {
-public:
+ public:
   tcp_server(boost::asio::io_context& io_context, int port)
       : io_context_(io_context),
         acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
     start_accept();
   }
 
-private:
+ private:
   void start_accept() {
     tcp_connection::pointer new_connection =
       tcp_connection::create(io_context_);

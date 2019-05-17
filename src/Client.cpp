@@ -1,8 +1,9 @@
+// Copyright 2019 Justin Johnson, Lukas Joswiak, and Jack Khuu
 #include <iostream>
-#include <boost/array.hpp>
-#include <boost/asio.hpp>
 #include <fstream>
 #include <string>
+#include <boost/array.hpp>
+#include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
 
@@ -21,16 +22,16 @@ int main(int argc, char* argv[]) {
       std::cerr << "Usage: client <operations>" << std::endl;
       return 1;
     }
-    
+
     // Read list of host names and ports from config file.
     std::vector<std::tuple<const char*, const char*>> serverAddresses;
-   
+
     std::ifstream configFile(CONFIG_FILE_PATH);
     if (!configFile) {
       std::cout << "cannot open config file" << std::endl;
       return 1;
     }
-    
+
     char buf[MAX_CONFIG_LINE_LEN];
     while (configFile) {
       configFile.getline(buf, MAX_CONFIG_LINE_LEN);
@@ -46,11 +47,13 @@ int main(int argc, char* argv[]) {
     // Parse operations from command argument.
     char* unparsed_ops = argv[1];
     std::vector<std::string> parsed_ops;
-    char* token = strtok(unparsed_ops, ",");
+
+    char *saveptr1, *saveptr2;  // Used for thread safety by strtok_r.
+    char* token = strtok_r(unparsed_ops, ",", &saveptr1);
 
     while (token != NULL) {
       parsed_ops.push_back(std::string(token));
-      token = strtok(NULL, ",");
+      token = strtok_r(NULL, ",", &saveptr2);
     }
 
     // For now, print ops to cout. Eventually, they will be printed
