@@ -1,6 +1,9 @@
-# include <stdlib.h>
+#include "./KVStore.h"
 
-# include "./KVStore.h"
+#include <map>
+#include <string>
+
+#include <stdlib.h>
 
 namespace KVStore {
 using namespace std;

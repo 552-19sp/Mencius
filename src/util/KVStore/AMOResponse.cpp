@@ -1,4 +1,8 @@
-# include "AMOResponse.h"
+#include "AMOResponse.h"
+
+#include <string>
+
+#include "./AMOCommand.h"
 
 namespace AMOResponse {
 using namespace std;

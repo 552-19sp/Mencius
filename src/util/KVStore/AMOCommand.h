@@ -1,9 +1,9 @@
-# ifndef _AMOCOMMAND_H_
-# define _AMOCOMMAND_H_
+#ifndef _AMOCOMMAND_H_
+#define _AMOCOMMAND_H_
 
-# include <string>
+#include <string>
 
-# include "./Action.h"
+#include "./Action.h"
 
 namespace AMOCommand {
 using namespace std;
@@ -11,7 +11,8 @@ using namespace std;
 class AMOCommand {
   public:
     AMOCommand() {}
-    AMOCommand(const int &seqNum, const int &key, const string &value, const Action::Action &action);
+    AMOCommand(const int &seqNum, const int &key, const string &value, 
+		    const Action::Action &action);
 
     bool operator< (const AMOCommand &r) const;
 
@@ -28,4 +29,4 @@ class AMOCommand {
 };
 } //namespace AMOCommand
 
-# endif // _AMOCOMMAND_H_
+#endif // _AMOCOMMAND_H_

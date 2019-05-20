@@ -1,8 +1,14 @@
-# include "./AMOStore.h"
-# include "./Action.h"
+#include "./AMOStore.h"
 
-# include <iostream>
-# include <stdlib.h>
+#include <map>
+#include <string>
+#include <iostream>
+#include <stdlib.h>
+
+#include "./Action.h"
+#include "./AMOCommand.h"
+#include "./AMOResponse.h"
+#include "./KVStore.h"
 
 namespace AMOStore {
 using namespace std;

@@ -1,9 +1,9 @@
-# ifndef _AMORESPONSE_H_
-# define _AMORESPONSE_H_
+#ifndef _AMORESPONSE_H_
+#define _AMORESPONSE_H_
 
-# include <string>
+#include <string>
 
-# include "./AMOCommand.h"
+#include "./AMOCommand.h"
 
 namespace AMOResponse {
 using namespace std;
@@ -24,4 +24,4 @@ class AMOResponse {
 };
 } //namespace AMOResponse
 
-# endif // _AMORESPONSE_H_
+#endif // _AMORESPONSE_H_

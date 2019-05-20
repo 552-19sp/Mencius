@@ -1,4 +1,6 @@
-# include "AMOCommand.h"
+#include "./AMOCommand.h"
+
+#include "./Action.h"
 
 namespace AMOCommand {
 using namespace std;

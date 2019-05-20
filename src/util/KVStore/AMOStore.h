@@ -1,12 +1,12 @@
-# ifndef _AMOSTORE_H_
-# define _AMOSTORE_H_
+#ifndef _AMOSTORE_H_
+#define _AMOSTORE_H_
 
-# include <map>
-# include <string>
+#include <map>
+#include <string>
 
-# include "./AMOCommand.h"
-# include "./AMOResponse.h"
-# include "./KVStore.h"
+#include "./AMOCommand.h"
+#include "./AMOResponse.h"
+#include "./KVStore.h"
 
 namespace AMOStore {
 using namespace std;
@@ -26,4 +26,4 @@ class AMOStore {
 
 } //namespace AMOStore
 
-# endif // _AMOSTORE_H_
+#endif // _AMOSTORE_H_
