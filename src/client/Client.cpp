@@ -5,6 +5,8 @@
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 
+#include "Message.hpp"
+
 using boost::asio::ip::tcp;
 
 // Assume that each line in our config is <= 255 bytes.
@@ -22,6 +24,8 @@ int main(int argc, char* argv[]) {
       std::cerr << "Usage: client <operations>" << std::endl;
       return 1;
     }
+
+    Message m("hello", MessageType::Request);
 
     // Read list of host names and ports from config file.
     std::vector<std::tuple<const char*, const char*>> serverAddresses;

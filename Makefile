@@ -2,8 +2,9 @@ CLIENT_TARGET = client
 SERVER_TARGET = server
 
 CC = g++
-CFLAGS = -Wall -g -std=c++14
-LIBS = -pthread -L/usr/include/boost -lboost_system -lboost_chrono
+CFLAGS = -Wall -g -std=c++14 -I include/
+SHARED_LIBS = -lboost_serialization
+LIBS = -pthread -L/usr/include/boost -lboost_system -lboost_chrono $(SHARED_LIBS)
 PROGS = all
 
 SRCDIR = src
@@ -11,38 +12,33 @@ OBJDIR = obj
 BINDIR = bin
 
 # On Mac, Boost is installed through brew, so the
-# explicit linking of the libraries is not needed.
+# explicit linking of some libraries is not needed.
 ifneq ($(OS),Windows_NT)
     UNAME := $(shell uname -s)
     ifeq ($(UNAME),Darwin)
-        LIBS = # empty on Mac
+        LIBS = $(SHARED_LIBS)
     endif
 endif
 
-# Since we need two executables (but right now each
-# is just a single file), use two separate rules.
-# If they ever grow  to be multiple files, can move
-# to a folder and change this rule to include
-# everything in the folder.
-CLIENT_SRC = $(wildcard $(SRCDIR)/Client.cpp)
-CLIENT_OBJ = $(CLIENT_SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
+all: client server
 
-SERVER_SRC = $(wildcard $(SRCDIR)/Server.cpp)
-SERVER_OBJ = $(SERVER_SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
-
-all: $(CLIENT_TARGET) $(SERVER_TARGET)
-
-$(CLIENT_TARGET): $(CLIENT_OBJ)
+client: obj/client/Client.o obj/Message.o
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
-$(SERVER_TARGET): $(SERVER_OBJ)
+server: obj/server/Server.o obj/Message.o
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR) $(BINDIR)
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR)/client/Client.o: $(SRCDIR)/client/Client.cpp | $(OBJDIR) $(BINDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR)/server/Server.o: $(SRCDIR)/server/Server.cpp | $(OBJDIR) $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR) $(BINDIR):
-	mkdir -p $@
+	mkdir -p $@ obj/client obj/server
 
 clean:
 	rm -rf $(OBJDIR) $(BINDIR)
