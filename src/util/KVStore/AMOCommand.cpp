@@ -1,12 +1,16 @@
-#include "./AMOCommand.h"
+// Copyright 2019 Jack Khuu, Justin Johnson, Lukas Joswiak
 
-#include "./Action.h"
+#include "AMOCommand.hpp"
+
+#include <string>
+
+#include "Action.hpp"
 
 namespace AMOCommand {
-using namespace std;
+using std::string;
 
-AMOCommand::AMOCommand(const int &seqNum, const int &key, const string &value, 
-			const Action::Action &action) {
+AMOCommand::AMOCommand(const int &seqNum, const int &key, const string &value,
+                        const Action::Action &action) {
   seqNum_ = seqNum;
   key_ = key;
   value_ = value;
@@ -32,4 +36,4 @@ string AMOCommand::GetValue() const {
 Action::Action AMOCommand::GetAction() const {
   return action_;
 }
-} // namespace AMOCommand 
+}  // namespace AMOCommand

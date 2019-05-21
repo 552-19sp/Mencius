@@ -24,10 +24,12 @@ As it currently stands, errors are thrown when Commands are issued on illegal st
 
 Compilation
 -----------
-g++ -c KVStore.cpp
-g++ -c AMOCommand.cpp
-g++ -c AMOResponse.cpp
-g++ -c AMOStore.cpp
+g++ -Wall -g -std=c++14 -I ../../../include/
 
-c++ -c example.cpp
-g++ -o example *.o
+-c KVStore.cpp
+-c AMOCommand.cpp
+-c AMOResponse.cpp
+-c AMOStore.cpp
+-c example.cpp
+
+-o example *.o

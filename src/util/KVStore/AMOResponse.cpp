@@ -1,17 +1,20 @@
-#include "AMOResponse.h"
+// Copyright 2019 Jack Khuu, Justin Johnson, Lukas Joswiak
+
+#include "AMOResponse.hpp"
 
 #include <string>
 
-#include "./AMOCommand.h"
+#include "AMOCommand.hpp"
 
 namespace AMOResponse {
-using namespace std;
+using std::string;
 
 AMOResponse::AMOResponse() {}
 
-AMOResponse::AMOResponse(const AMOCommand::AMOCommand &command, const string &value) {
+AMOResponse::AMOResponse(const AMOCommand::AMOCommand &command,
+                     const string &value) {
   command_ = command;
-  value_ = value; 
+  value_ = value;
 }
 
 bool AMOResponse::operator< (const AMOResponse &r) const {
@@ -25,4 +28,4 @@ AMOCommand::AMOCommand AMOResponse::GetCommand() const {
 string AMOResponse::GetValue() const {
   return value_;
 }
-} // namespace AMOResponse
+}  // namespace AMOResponse
