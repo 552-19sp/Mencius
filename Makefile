@@ -25,10 +25,10 @@ SERVER_OBJ = $(SERVER_SRC:$(SRCDIR)/server/%.cpp=$(OBJDIR)/server/%.o)
 
 all: client server
 
-client: obj/client/Client.o obj/Message.o
+client: obj/client/Client.o obj/Message.o obj/Utilities.o
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
-server: $(SERVER_OBJ) obj/Message.o
+server: $(SERVER_OBJ) obj/Message.o obj/Utilities.o
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
