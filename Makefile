@@ -20,12 +20,15 @@ ifneq ($(OS),Windows_NT)
     endif
 endif
 
+SERVER_SRC = $(wildcard $(SRCDIR)/server/*.cpp)
+SERVER_OBJ = $(SERVER_SRC:$(SRCDIR)/server/%.cpp=$(OBJDIR)/server/%.o)
+
 all: client server
 
 client: obj/client/Client.o obj/Message.o
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
-server: obj/server/Server.o obj/Message.o
+server: $(SERVER_OBJ) obj/Message.o
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
@@ -34,11 +37,14 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 $(OBJDIR)/client/Client.o: $(SRCDIR)/client/Client.cpp | $(OBJDIR) $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJDIR)/server/Server.o: $(SRCDIR)/server/Server.cpp | $(OBJDIR) $(BINDIR)
+$(OBJDIR)/server/Server.o: $(SERVER_SRC) | $(OBJDIR) $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR) $(BINDIR):
 	mkdir -p $@ obj/client obj/server
+
+cpplint:
+	cpplint --filter=-runtime/references --recursive */*
 
 clean:
 	rm -rf $(OBJDIR) $(BINDIR)

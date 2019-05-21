@@ -5,7 +5,3 @@
 Message::Message() {}
 
 Message::Message(std::string m, MessageType type) : m_(m), type_(type) {}
-
-std::string Message::GetMessage() {
-  return m_;
-}

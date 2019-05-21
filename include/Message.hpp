@@ -17,11 +17,13 @@ class Message {
   Message();
   Message(std::string m, MessageType type);
 
-  std::string GetMessage();
+  std::string GetMessage() {
+    return m_;
+  }
  private:
   friend class boost::serialization::access;
 
-  template<class Archive> void serialize(Archive& ar,
+  template<class Archive> void serialize(Archive &ar,
       const unsigned int version) {
     ar & m_;
     ar & type_;
