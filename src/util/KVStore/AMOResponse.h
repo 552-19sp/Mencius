@@ -15,8 +15,8 @@ class AMOResponse {
 
     bool operator< (const AMOResponse &r) const;
 
-    AMOCommand::AMOCommand getCommand() const;
-    string getValue() const;
+    AMOCommand::AMOCommand GetCommand() const;
+    string GetValue() const;
 
   private:
     AMOCommand::AMOCommand command_;

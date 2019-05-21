@@ -17,19 +17,19 @@ bool AMOCommand::operator< (const AMOCommand &r) const {
   return this->seqNum_ < r.seqNum_;
 }
 
-int AMOCommand::getSeqNum() const {
+int AMOCommand::GetSeqNum() const {
   return seqNum_;
 }
 
-int AMOCommand::getKey() const {
+int AMOCommand::GetKey() const {
   return key_;
 }
 
-string AMOCommand::getValue() const {
+string AMOCommand::GetValue() const {
   return value_;
 }
 
-Action::Action AMOCommand::getAction() const {
+Action::Action AMOCommand::GetAction() const {
   return action_;
 }
 } // namespace AMOCommand 

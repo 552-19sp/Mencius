@@ -14,7 +14,7 @@ namespace AMOStore {
 using namespace std;
 using namespace Action;
 
-bool AMOStore::alreadyExecuted(const AMOCommand::AMOCommand &command) const {
+bool AMOStore::AlreadyExecuted(const AMOCommand::AMOCommand &command) const {
   return prev_.find(command) != prev_.end();
 }
 
@@ -22,22 +22,22 @@ AMOStore::AMOStore() {
   kvStore_ = KVStore::KVStore();
 }
       
-AMOResponse::AMOResponse AMOStore::execute(const AMOCommand::AMOCommand &command) {
+AMOResponse::AMOResponse AMOStore::Execute(const AMOCommand::AMOCommand &command) {
   string s;
-  if (!alreadyExecuted(command)) {
+  if (!AlreadyExecuted(command)) {
     cout << "New" << endl;
-    switch(command.getAction()) {
+    switch(command.GetAction()) {
       case PUT:
         cout << "PUT" << endl;
-        s = kvStore_.insert(command.getKey(), command.getValue());
+        s = kvStore_.Insert(command.GetKey(), command.GetValue());
         break;
       case APPEND:
         cout << "APPEND" << endl;
-        s = kvStore_.append(command.getKey(), command.getValue());
+        s = kvStore_.Append(command.GetKey(), command.GetValue());
         break;
       case GET:
         cout << "GET" << endl;
-        s = kvStore_.get(command.getKey());
+        s = kvStore_.Get(command.GetKey());
         break;
       default:  
         exit(EXIT_FAILURE);
@@ -46,7 +46,7 @@ AMOResponse::AMOResponse AMOStore::execute(const AMOCommand::AMOCommand &command
     prev_[command] = AMOResponse::AMOResponse(command, s);
   }
   cout << "Returned from Execute: ";
-  cout << prev_[command].getValue() << endl;
+  cout << prev_[command].GetValue() << endl;
   return prev_[command];
 }
 } //namespace AMOStore

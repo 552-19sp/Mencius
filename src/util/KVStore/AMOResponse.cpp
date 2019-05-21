@@ -18,11 +18,11 @@ bool AMOResponse::operator< (const AMOResponse &r) const {
   return command_ < r.command_;
 }
 
-AMOCommand::AMOCommand AMOResponse::getCommand() const {
+AMOCommand::AMOCommand AMOResponse::GetCommand() const {
   return command_;
 }
 
-string AMOResponse::getValue() const {
+string AMOResponse::GetValue() const {
   return value_;
 }
 } // namespace AMOResponse

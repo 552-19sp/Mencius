@@ -9,9 +9,9 @@ using namespace std;
 
 class KVStore {
   public:
-    string insert(const int &key, const string &value);
-    string append(const int &key, const string &value);
-    string get(const int &key);
+    string Insert(const int &key, const string &value);
+    string Append(const int &key, const string &value);
+    string Get(const int &key);
 
   private:
     map<int, string> store_;

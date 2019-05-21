@@ -16,10 +16,10 @@ class AMOCommand {
 
     bool operator< (const AMOCommand &r) const;
 
-    int getSeqNum() const;
-    int getKey() const;
-    string getValue() const;
-    Action::Action getAction() const;
+    int GetSeqNum() const;
+    int GetKey() const;
+    string GetValue() const;
+    Action::Action GetAction() const;
 
   private:
     int seqNum_;

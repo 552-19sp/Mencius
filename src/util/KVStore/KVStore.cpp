@@ -8,7 +8,7 @@
 namespace KVStore {
 using namespace std;
 
-string KVStore::insert(const int &key, const string &value) {
+string KVStore::Insert(const int &key, const string &value) {
   if (store_.find(key) != store_.end()) {
     // TODO: Support an Error Message
     exit(EXIT_FAILURE);
@@ -18,7 +18,7 @@ string KVStore::insert(const int &key, const string &value) {
   return store_[key];
 }
 
-string KVStore::append(const int &key, const string &value) {
+string KVStore::Append(const int &key, const string &value) {
   if (store_.find(key) == store_.end()) {
     // TODO: Support an Error Message
     exit(EXIT_FAILURE);
@@ -27,7 +27,7 @@ string KVStore::append(const int &key, const string &value) {
   return store_[key];
 }
 
-string KVStore::get(const int &key) {
+string KVStore::Get(const int &key) {
   return store_[key];
 }
 } //namespace KVStore
