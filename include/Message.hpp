@@ -4,6 +4,7 @@
 #define INCLUDE_MESSAGE_HPP_
 
 #include <string>
+#include <sstream>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
@@ -20,6 +21,14 @@ class Message {
   std::string GetMessage() {
     return m_;
   }
+
+  // Serializes this Message and returns the serialized
+  // output as a string.
+  std::string Encode() const;
+
+  // Deserialize the given string into a Message object.
+  static Message Decode(const std::string data);
+
  private:
   friend class boost::serialization::access;
 

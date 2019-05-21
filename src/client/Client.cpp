@@ -4,19 +4,7 @@
 
 #include "Client.hpp"
 #include "Message.hpp"
-
-std::string encode() {
-  // TODO(ljoswiak): Move to util class
-  Message m("Hello, World!", MessageType::Reply);
-
-  std::ostringstream archive_stream;
-  {
-    boost::archive::text_oarchive oa(archive_stream);
-    oa << m;
-  }
-
-  return archive_stream.str();
-}
+#include "Utilities.hpp"
 
 Client::Client(boost::asio::io_context &io_context)
   : stopped_(false),
@@ -121,12 +109,14 @@ void Client::StartWrite() {
     return;
   }
 
-  std::string m = encode();
+  const Message msg("Hello, World!", MessageType::Reply);
+  std::string m = msg.Encode();
+  std::cout << "encoded: " << m << std::endl;
 
   boost::asio::async_write(socket_,
       boost::asio::buffer(m, m.length()),
       boost::bind(&Client::HandleWrite, this, _1));
-  // Can also set a deadline for message sends.
+  // TODO(ljoswiak): Can also set a deadline for message sends.
 }
 
 void Client::HandleWrite(const boost::system::error_code &ec) {
@@ -160,7 +150,17 @@ void Client::CheckDeadline() {
   read_timer_.async_wait(boost::bind(&Client::CheckDeadline, this));
 }
 
-int main() {
+const char kConfigFilePath[] = "config";
+
+int main(int argc, char **argv) {
+  if (argc != 2) {
+    std::cerr << "Usage: client <operations>" << std::endl;
+    return 1;
+  }
+
+  auto server_addresses = Utilities::ReadConfig(kConfigFilePath);
+  std::cout << server_addresses.size() << std::endl;
+
   boost::asio::io_context io_context;
   tcp::resolver r(io_context);
   Client c(io_context);
@@ -182,11 +182,6 @@ const char *CONFIG_FILE_PATH = "config";
 
 int main(int argc, char* argv[]) {
   try {
-    if (argc != 2) {
-      std::cerr << "Usage: client <operations>" << std::endl;
-      return 1;
-    }
-
     // Read list of host names and ports from config file.
     std::vector<std::tuple<const char*, const char*>> serverAddresses;
 

@@ -5,14 +5,6 @@
 #include "Message.hpp"
 #include "TCPConnection.hpp"
 
-Message decode(std::string data) {
-  Message m;
-  std::istringstream archive_stream(data);
-  boost::archive::text_iarchive archive(archive_stream);
-  archive >> m;
-  return m;
-}
-
 TCPConnection::pointer TCPConnection::Create(
     boost::asio::io_context &io_context) {
   return pointer(new TCPConnection(io_context));
@@ -55,7 +47,7 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
 
     std::cout << "Received serialized message: " << data << std::endl;
 
-    Message m = decode(data);
+    Message m = Message::Decode(data);
     std::cout << "Decoded message: " << m.GetMessage() << std::endl;
 
     StartRead();
