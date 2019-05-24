@@ -1,5 +1,7 @@
 // Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu.
 
+#include <string.h>
+
 #include <fstream>
 #include <iostream>
 
@@ -31,4 +33,18 @@ std::vector<std::tuple<std::string, std::string>> Utilities::ReadConfig(
   }
 
   return server_addresses;
+}
+
+std::vector<std::string> Utilities::ParseOperations(char *unparsed_ops) {
+  // Parse operations from command argument.
+  std::vector<std::string> parsed_ops;
+
+  char *saveptr;
+  char *token = strtok_r(unparsed_ops, ",", &saveptr);
+
+  while (token != NULL) {
+    parsed_ops.push_back(std::string(token));
+    token = strtok_r(NULL, ",", &saveptr);
+  }
+  return parsed_ops;
 }

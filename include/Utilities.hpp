@@ -11,6 +11,11 @@ class Utilities {
  public:
   static std::vector<std::tuple<std::string, std::string>> ReadConfig(
     const std::string &config_path);
+
+  // Given a string of comma separated operations,
+  // parses the operations and returns each operation
+  // separated into a vector.
+  static std::vector<std::string> ParseOperations(char *unparsed_ops);
 };
 
 #endif  // INCLUDE_UTILITIES_HPP_
