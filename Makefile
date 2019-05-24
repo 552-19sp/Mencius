@@ -23,28 +23,40 @@ endif
 SERVER_SRC = $(wildcard $(SRCDIR)/server/*.cpp)
 SERVER_OBJ = $(SERVER_SRC:$(SRCDIR)/server/%.cpp=$(OBJDIR)/server/%.o)
 
+# Client doesn't need KVStore.
+CLIENT_UTIL_SRC = $(wildcard $(SRCDIR)/util/*.cpp)
+CLIENT_UTIL_OBJ = $(CLIENT_UTIL_SRC:$(SRCDIR)/util/%.cpp=$(OBJDIR)/%.o)
+
+SERVER_UTIL_SRC = $(CLIENT_UTIL_SRC) $(wildcard $(SRCDIR)/util/*/*.cpp)
+SERVER_UTIL_OBJ = $(SERVER_UTIL_SRC:$(SRCDIR)/util/%.cpp=$(OBJDIR)/%.o)
+
+
 all: client server
 
-client: obj/client/Client.o obj/Message.o obj/Utilities.o
+client: obj/client/Client.o $(CLIENT_UTIL_OBJ)
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
-server: $(SERVER_OBJ) obj/Message.o obj/Utilities.o
+server: $(SERVER_OBJ) $(SERVER_UTIL_OBJ)
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+$(OBJDIR)/%.o: $(SRCDIR)/util/%.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR)/KVStore/%.o: $(SRCDIR)/util/KVStore/%.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/client/Client.o: $(SRCDIR)/client/Client.cpp | $(OBJDIR) $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJDIR)/server/Server.o: $(SERVER_SRC) | $(OBJDIR) $(BINDIR)
+$(OBJDIR)/server/%.o: $(SRCDIR)/server/%.cpp | $(OBJDIR) $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR) $(BINDIR):
-	mkdir -p $@ obj/client obj/server
+	mkdir -p $@ obj/client obj/server obj/KVStore
 
 cpplint:
 	cpplint --filter=-runtime/references --recursive */*
 
+.PHONY: clean
 clean:
 	rm -rf $(OBJDIR) $(BINDIR)

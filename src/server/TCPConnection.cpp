@@ -1,9 +1,11 @@
 // Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu.
 
+#include "TCPConnection.hpp"
+
 #include <iostream>
 
 #include "Message.hpp"
-#include "TCPConnection.hpp"
+#include "KVStore.hpp"
 
 TCPConnection::pointer TCPConnection::Create(
     boost::asio::io_context &io_context) {

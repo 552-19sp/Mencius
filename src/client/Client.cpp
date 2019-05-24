@@ -1,8 +1,9 @@
 // Copyright 2019 Justin Johnson, Lukas Joswiak, and Jack Khuu
 
+#include "Client.hpp"
+
 #include <boost/bind.hpp>
 
-#include "Client.hpp"
 #include "Message.hpp"
 #include "Utilities.hpp"
 

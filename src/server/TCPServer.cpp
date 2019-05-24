@@ -1,8 +1,8 @@
 // Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu.
 
-#include <iostream>
+#include "TCPServer.hpp"
 
-#include <TCPServer.hpp>
+#include <iostream>
 
 TCPServer::TCPServer(boost::asio::io_context &io_context, int port)
     : io_context_(io_context),
