@@ -17,7 +17,7 @@ namespace KVStore {
 using std::string;
 using std::map;
 
-AMOStore::AMOStore():kvStore_(KVStore()) {}
+AMOStore::AMOStore():kv_store_(KVStore()) {}
 
 bool AMOStore::AlreadyExecuted(const AMOCommand &command) const {
   return prev_.find(command) != prev_.end();
@@ -29,13 +29,13 @@ AMOResponse AMOStore::Execute(
   if (!AlreadyExecuted(command)) {
     switch (command.GetAction()) {
       case Action::PUT:
-        s = kvStore_.Put(command.GetKey(), command.GetValue());
+        s = kv_store_.Put(command.GetKey(), command.GetValue());
         break;
       case Action::APPEND:
-        s = kvStore_.Append(command.GetKey(), command.GetValue());
+        s = kv_store_.Append(command.GetKey(), command.GetValue());
         break;
       case Action::GET:
-        s = kvStore_.Get(command.GetKey());
+        s = kv_store_.Get(command.GetKey());
         break;
       default:
         exit(EXIT_FAILURE);

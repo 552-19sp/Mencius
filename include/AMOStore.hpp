@@ -19,7 +19,7 @@ class AMOStore {
   AMOResponse Execute(const AMOCommand &command);
 
  private:
-  KVStore kvStore_;
+  KVStore kv_store_;
   std::map<AMOCommand, AMOResponse> prev_;
 
   bool AlreadyExecuted(const AMOCommand &command) const;
