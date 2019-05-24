@@ -8,21 +8,20 @@
 #include "AMOCommand.hpp"
 
 namespace AMOResponse {
-using std::string;
 
 class AMOResponse {
  public:
   AMOResponse();
-  AMOResponse(const AMOCommand::AMOCommand &command, const string &value);
+  AMOResponse(const AMOCommand::AMOCommand &command, const std::string &value);
 
-  bool operator< (const AMOResponse &r) const;
+  bool operator< (const AMOResponse &right) const;
 
   AMOCommand::AMOCommand GetCommand() const;
-  string GetValue() const;
+  std::string GetValue() const;
 
  private:
   AMOCommand::AMOCommand command_;
-  string value_;
+  std::string value_;
 };
 }  // namespace AMOResponse
 

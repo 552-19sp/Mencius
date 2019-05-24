@@ -8,25 +8,24 @@
 #include "Action.hpp"
 
 namespace AMOCommand {
-using std::string;
 
 class AMOCommand {
  public:
   AMOCommand() {}
-  AMOCommand(const int &seqNum, const int &key, const string &value,
+  AMOCommand(int seqNum, const std::string key, const std::string &value,
                    const Action::Action &action);
 
   bool operator< (const AMOCommand &r) const;
 
   int GetSeqNum() const;
-  int GetKey() const;
-  string GetValue() const;
+  std::string GetKey() const;
+  std::string GetValue() const;
   Action::Action GetAction() const;
 
  private:
-  int seqNum_;
-  int key_;
-  string value_;
+  int seq_num_;
+  std::string key_;
+  std::string value_;
   Action::Action action_;
 };
 }  // namespace AMOCommand

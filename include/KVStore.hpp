@@ -7,17 +7,15 @@
 #include <string>
 
 namespace KVStore {
-using std::string;
-using std::map;
 
 class KVStore {
  public:
-  string Insert(const int &key, const string &value);
-  string Append(const int &key, const string &value);
-  string Get(const int &key);
+  std::string Put(const std::string &key, const std::string &value);
+  std::string Append(const std::string &key, const std::string &value);
+  std::string Get(const std::string &key);
 
  private:
-  map<int, string> store_;
+  std::map<std::string, std::string> store_;
 };
 }  // namespace KVStore
 

@@ -11,7 +11,6 @@
 #include "KVStore.hpp"
 
 namespace AMOStore {
-using std::map;
 
 class AMOStore {
  public:
@@ -21,7 +20,7 @@ class AMOStore {
 
  private:
   KVStore::KVStore kvStore_;
-  map<AMOCommand::AMOCommand, AMOResponse::AMOResponse> prev_;
+  std::map<AMOCommand::AMOCommand, AMOResponse::AMOResponse> prev_;
 
   bool AlreadyExecuted(const AMOCommand::AMOCommand &command) const;
 };

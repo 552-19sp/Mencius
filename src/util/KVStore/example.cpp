@@ -12,7 +12,7 @@ using std::endl;
 int main() {
   AMOStore::AMOStore app = AMOStore::AMOStore();
 
-  AMOCommand::AMOCommand c1 = AMOCommand::AMOCommand(0, 10, "A", Action::PUT);
+  AMOCommand::AMOCommand c1 = AMOCommand::AMOCommand(0, "10", "A", Action::PUT);
   app.Execute(c1);
   cout << "Done" << endl;
   return 0;

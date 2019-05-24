@@ -9,23 +9,19 @@
 namespace AMOCommand {
 using std::string;
 
-AMOCommand::AMOCommand(const int &seqNum, const int &key, const string &value,
-                        const Action::Action &action) {
-  seqNum_ = seqNum;
-  key_ = key;
-  value_ = value;
-  action_ = action;
-}
+AMOCommand::AMOCommand(int seq_num, const string key, const string &value,
+                        const Action::Action &action):
+            seq_num_(seq_num), key_(key), value_(value), action_(action) {}
 
 bool AMOCommand::operator< (const AMOCommand &r) const {
-  return this->seqNum_ < r.seqNum_;
+  return this->seq_num_ < r.seq_num_;
 }
 
 int AMOCommand::GetSeqNum() const {
-  return seqNum_;
+  return seq_num_;
 }
 
-int AMOCommand::GetKey() const {
+string AMOCommand::GetKey() const {
   return key_;
 }
 

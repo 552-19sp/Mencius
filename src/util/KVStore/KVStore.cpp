@@ -11,7 +11,7 @@ namespace KVStore {
 using std::map;
 using std::string;
 
-string KVStore::Insert(const int &key, const string &value) {
+string KVStore::Put(const string &key, const string &value) {
   if (store_.find(key) != store_.end()) {
     // TODO(jackkhuu): Support an Error Message
     exit(EXIT_FAILURE);
@@ -21,7 +21,7 @@ string KVStore::Insert(const int &key, const string &value) {
   return store_[key];
 }
 
-string KVStore::Append(const int &key, const string &value) {
+string KVStore::Append(const string &key, const string &value) {
   if (store_.find(key) == store_.end()) {
     // TODO(jackkhuu): Support an Error Message
     exit(EXIT_FAILURE);
@@ -30,7 +30,7 @@ string KVStore::Append(const int &key, const string &value) {
   return store_[key];
 }
 
-string KVStore::Get(const int &key) {
+string KVStore::Get(const string &key) {
   return store_[key];
 }
 }  // namespace KVStore
