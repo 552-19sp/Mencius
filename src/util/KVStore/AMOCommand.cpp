@@ -6,11 +6,11 @@
 
 #include "Action.hpp"
 
-namespace AMOCommand {
+namespace KVStore {
 using std::string;
 
 AMOCommand::AMOCommand(int seq_num, const string key, const string &value,
-                        const Action::Action &action):
+                        const Action &action):
             seq_num_(seq_num), key_(key), value_(value), action_(action) {}
 
 bool AMOCommand::operator< (const AMOCommand &r) const {
@@ -29,7 +29,7 @@ string AMOCommand::GetValue() const {
   return value_;
 }
 
-Action::Action AMOCommand::GetAction() const {
+Action AMOCommand::GetAction() const {
   return action_;
 }
-}  // namespace AMOCommand
+}  // namespace KVStore 

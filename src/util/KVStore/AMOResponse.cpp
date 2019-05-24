@@ -6,19 +6,19 @@
 
 #include "AMOCommand.hpp"
 
-namespace AMOResponse {
+namespace KVStore {
 using std::string;
 
 AMOResponse::AMOResponse() {}
 
-AMOResponse::AMOResponse(const AMOCommand::AMOCommand &command,
+AMOResponse::AMOResponse(const AMOCommand &command,
                      const string &value):command_(command), value_(value) {}
 
 bool AMOResponse::operator< (const AMOResponse &right) const {
   return command_ < right.command_;
 }
 
-AMOCommand::AMOCommand AMOResponse::GetCommand() const {
+AMOCommand AMOResponse::GetCommand() const {
   return command_;
 }
 

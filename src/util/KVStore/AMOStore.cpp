@@ -13,18 +13,18 @@
 #include "AMOResponse.hpp"
 #include "KVStore.hpp"
 
-namespace AMOStore {
+namespace KVStore {
 using std::string;
 using std::map;
 
-AMOStore::AMOStore():kvStore_(KVStore::KVStore()) {}
+AMOStore::AMOStore():kvStore_(KVStore()) {}
 
-bool AMOStore::AlreadyExecuted(const AMOCommand::AMOCommand &command) const {
+bool AMOStore::AlreadyExecuted(const AMOCommand &command) const {
   return prev_.find(command) != prev_.end();
 }
 
-AMOResponse::AMOResponse AMOStore::Execute(
-                const AMOCommand::AMOCommand &command) {
+AMOResponse AMOStore::Execute(
+                const AMOCommand &command) {
   string s;
   if (!AlreadyExecuted(command)) {
     switch (command.GetAction()) {
@@ -41,9 +41,9 @@ AMOResponse::AMOResponse AMOStore::Execute(
         exit(EXIT_FAILURE);
     }
 
-    prev_[command] = AMOResponse::AMOResponse(command, s);
+    prev_[command] = AMOResponse(command, s);
   }
 
   return prev_[command];
 }
-}  // namespace AMOStore
+}  // namespace KVStore

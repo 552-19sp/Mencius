@@ -10,9 +10,9 @@ using std::cout;
 using std::endl;
 
 int main() {
-  AMOStore::AMOStore app = AMOStore::AMOStore();
+  KVStore::AMOStore app = KVStore::AMOStore();
 
-  AMOCommand::AMOCommand c1 = AMOCommand::AMOCommand(0, "10", "A", Action::PUT);
+  KVStore::AMOCommand c1 = KVStore::AMOCommand(0, "10", "A", KVStore::PUT);
   app.Execute(c1);
   cout << "Done" << endl;
   return 0;

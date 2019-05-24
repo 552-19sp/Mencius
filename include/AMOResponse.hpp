@@ -7,22 +7,22 @@
 
 #include "AMOCommand.hpp"
 
-namespace AMOResponse {
+namespace KVStore {
 
 class AMOResponse {
  public:
   AMOResponse();
-  AMOResponse(const AMOCommand::AMOCommand &command, const std::string &value);
+  AMOResponse(const AMOCommand &command, const std::string &value);
 
   bool operator< (const AMOResponse &right) const;
 
-  AMOCommand::AMOCommand GetCommand() const;
+  AMOCommand GetCommand() const;
   std::string GetValue() const;
 
  private:
-  AMOCommand::AMOCommand command_;
+  AMOCommand command_;
   std::string value_;
 };
-}  // namespace AMOResponse
+}  // namespace KVStore
 
 #endif  // INCLUDE_AMORESPONSE_HPP_

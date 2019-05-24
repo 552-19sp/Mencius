@@ -7,27 +7,27 @@
 
 #include "Action.hpp"
 
-namespace AMOCommand {
+namespace KVStore {
 
 class AMOCommand {
  public:
   AMOCommand() {}
   AMOCommand(int seqNum, const std::string key, const std::string &value,
-                   const Action::Action &action);
+                   const Action &action);
 
   bool operator< (const AMOCommand &r) const;
 
   int GetSeqNum() const;
   std::string GetKey() const;
   std::string GetValue() const;
-  Action::Action GetAction() const;
+  Action GetAction() const;
 
  private:
   int seq_num_;
   std::string key_;
   std::string value_;
-  Action::Action action_;
+  Action action_;
 };
-}  // namespace AMOCommand
+}  // namespace KVStore 
 
 #endif  // INCLUDE_AMOCOMMAND_HPP_

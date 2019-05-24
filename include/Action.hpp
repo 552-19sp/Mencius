@@ -3,8 +3,8 @@
 #ifndef INCLUDE_ACTION_HPP_
 #define INCLUDE_ACTION_HPP_
 
-namespace Action {
+namespace KVStore {
 enum Action { PUT, APPEND, GET };
-}  // namespace Action
+}  // namespace KVStore 
 
 #endif  // INCLUDE_ACTION_HPP_
