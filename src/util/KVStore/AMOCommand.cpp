@@ -9,7 +9,7 @@
 namespace KVStore {
 using std::string;
 
-AMOCommand::AMOCommand(int seq_num, const string key, const string &value,
+AMOCommand::AMOCommand(int seq_num, const string &key, const string &value,
                         const Action &action):
             seq_num_(seq_num), key_(key), value_(value), action_(action) {}
 

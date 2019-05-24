@@ -12,7 +12,7 @@ namespace KVStore {
 class AMOCommand {
  public:
   AMOCommand() {}
-  AMOCommand(int seq_num, const std::string key, const std::string &value,
+  AMOCommand(int seq_num, const std::string &key, const std::string &value,
                    const Action &action);
 
   bool operator< (const AMOCommand &r) const;
