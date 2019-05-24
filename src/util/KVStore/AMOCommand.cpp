@@ -32,4 +32,4 @@ string AMOCommand::GetValue() const {
 Action AMOCommand::GetAction() const {
   return action_;
 }
-}  // namespace KVStore 
+}  // namespace KVStore

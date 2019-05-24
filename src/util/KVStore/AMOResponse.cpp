@@ -25,4 +25,4 @@ AMOCommand AMOResponse::GetCommand() const {
 string AMOResponse::GetValue() const {
   return value_;
 }
-}  // namespace AMOResponse
+}  // namespace KVStore

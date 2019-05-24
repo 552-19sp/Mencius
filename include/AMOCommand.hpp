@@ -28,6 +28,6 @@ class AMOCommand {
   std::string value_;
   Action action_;
 };
-}  // namespace KVStore 
+}  // namespace KVStore
 
 #endif  // INCLUDE_AMOCOMMAND_HPP_

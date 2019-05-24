@@ -5,6 +5,6 @@
 
 namespace KVStore {
 enum Action { PUT, APPEND, GET };
-}  // namespace KVStore 
+}  // namespace KVStore
 
 #endif  // INCLUDE_ACTION_HPP_
