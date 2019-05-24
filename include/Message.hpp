@@ -1,4 +1,4 @@
-// Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu"
+// Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu.
 
 #ifndef INCLUDE_MESSAGE_HPP_
 #define INCLUDE_MESSAGE_HPP_
