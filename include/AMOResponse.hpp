@@ -5,6 +5,9 @@
 
 #include <string>
 
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
 #include "AMOCommand.hpp"
 
 namespace KVStore {
@@ -20,6 +23,14 @@ class AMOResponse {
   std::string GetValue() const;
 
  private:
+  friend class boost::serialization::access;
+
+  template<class Archive> void serialize(Archive &ar,
+      unsigned int version) {
+    ar & command_;
+    ar & value_;
+  }
+
   AMOCommand command_;
   std::string value_;
 };

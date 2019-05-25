@@ -16,10 +16,10 @@ enum MessageType {
 class Message {
  public:
   Message();
-  Message(std::string m, MessageType type);
+  Message(std::string encoded_message, MessageType type);
 
-  std::string GetMessage() {
-    return m_;
+  std::string GetEncodedMessage() {
+    return encoded_message_;
   }
 
   // Serializes this Message and returns the serialized
@@ -33,12 +33,12 @@ class Message {
   friend class boost::serialization::access;
 
   template<class Archive> void serialize(Archive &ar,
-      const unsigned int version) {
-    ar & m_;
+      unsigned int version) {
+    ar & encoded_message_;
     ar & type_;
   }
 
-  std::string m_;
+  std::string encoded_message_;
   MessageType type_;
 };
 

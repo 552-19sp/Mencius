@@ -50,7 +50,7 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
     std::cout << "Received serialized message: " << data << std::endl;
 
     Message m = Message::Decode(data);
-    std::cout << "Decoded message: " << m.GetMessage() << std::endl;
+    std::cout << "Decoded message: " << m.GetEncodedMessage() << std::endl;
 
     StartRead();
   } else {

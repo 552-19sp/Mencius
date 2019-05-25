@@ -4,7 +4,8 @@
 
 Message::Message() {}
 
-Message::Message(std::string m, MessageType type) : m_(m), type_(type) {}
+Message::Message(std::string encoded_message, MessageType type)
+    : encoded_message_(encoded_message), type_(type) {}
 
 std::string Message::Encode() const {
   std::ostringstream archive_stream;
