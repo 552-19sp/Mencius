@@ -4,6 +4,9 @@
 
 #include <boost/bind.hpp>
 
+#include "Action.hpp"
+#include "AMOCommand.hpp"
+#include "AMOResponse.hpp"
 #include "Message.hpp"
 #include "Utilities.hpp"
 
@@ -53,10 +56,10 @@ void Client::HandleConnect(const boost::system::error_code &ec,
   }
 
   if (!socket_.is_open()) {
-    std::cout << "Connect timed out" << std::endl;
+    std::cerr << "Connect timed out" << std::endl;
     StartConnect(++endpoint_iter);
   } else if (ec) {
-    std::cout << "Connect error: " << ec.message() << std::endl;
+    std::cerr << "Connect error: " << ec.message() << std::endl;
 
     // Close socket from previous attempt.
     socket_.close();
@@ -87,17 +90,23 @@ void Client::HandleRead(const boost::system::error_code &ec) {
   }
 
   if (!ec) {
-    std::string line;
+    std::string data;
     std::istream is(&input_buffer_);
-    std::getline(is, line);
+    std::getline(is, data);
 
-    if (!line.empty()) {
-      std::cout << "Received: " << line << std::endl;
+    if (!data.empty()) {
+      Message m = Message::Decode(data);
+      if (m.GetMessageType() == MessageType::Reply) {
+        auto response = KVStore::AMOResponse::Decode(m.GetEncodedMessage());
+
+        auto value = response.GetValue();
+        std::cout << "Received reply. Value: " << value << std::endl;
+      }
     }
 
     StartRead();
   } else {
-    std::cout << "Error on read: " << ec.message() << std::endl;
+    std::cerr << "Error on read: " << ec.message() << std::endl;
 
     // TODO(ljoswiak): Does client want to kill connection on
     // when an error occurs on read? Investigate.
@@ -110,12 +119,14 @@ void Client::StartWrite() {
     return;
   }
 
-  const Message msg("Hello, World!", MessageType::Reply);
-  std::string m = msg.Encode();
-  std::cout << "encoded: " << m << std::endl;
+  const std::string key = "foo";
+  const std::string value = "bar";
+  auto command = KVStore::AMOCommand(0, key, value, KVStore::PUT).Encode();
+  auto encoded = Message(command, MessageType::Request).Encode();
+  std::cout << "Sending request to server" << std::endl;
 
   boost::asio::async_write(socket_,
-      boost::asio::buffer(m, m.length()),
+      boost::asio::buffer(encoded),
       boost::bind(&Client::HandleWrite, this, _1));
   // TODO(ljoswiak): Can also set a deadline for message sends.
 }
@@ -126,10 +137,12 @@ void Client::HandleWrite(const boost::system::error_code &ec) {
   }
 
   if (!ec) {
+    /*
     write_timer_.expires_after(boost::asio::chrono::seconds(10));
     write_timer_.async_wait(boost::bind(&Client::StartWrite, this));
+    */
   } else {
-    std::cout << "Error on write: " << ec.message() << std::endl;
+    std::cerr << "Error on write: " << ec.message() << std::endl;
 
     Stop();
   }

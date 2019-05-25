@@ -5,8 +5,11 @@
 
 #include <string>
 #include <sstream>
+
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
+
+#include "AMOCommand.hpp"
 
 enum MessageType {
   Request,
@@ -20,6 +23,10 @@ class Message {
 
   std::string GetEncodedMessage() {
     return encoded_message_;
+  }
+
+  MessageType GetMessageType() {
+    return type_;
   }
 
   // Serializes this Message and returns the serialized

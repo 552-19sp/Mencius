@@ -4,10 +4,13 @@
 #define INCLUDE_TCPCONNECTION_HPP_
 
 #include <string>
+
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
+
+#include "AMOStore.hpp"
 
 using boost::asio::ip::tcp;
 
@@ -16,7 +19,8 @@ class TCPConnection
  public:
   typedef boost::shared_ptr<TCPConnection> pointer;
 
-  static pointer Create(boost::asio::io_context &io_context);
+  static pointer Create(boost::asio::io_context &io_context,
+    KVStore::AMOStore *app);
 
   tcp::socket &Socket() {
     return socket_;
@@ -25,9 +29,11 @@ class TCPConnection
   void Start();
 
  private:
-  explicit TCPConnection(boost::asio::io_context &io_context);
+  explicit TCPConnection(boost::asio::io_context &io_context,
+    KVStore::AMOStore *app);
 
-  void HandleWrite();
+  void StartWrite();
+  void HandleWrite(const boost::system::error_code &ec);
 
   void StartRead();
   void HandleRead(const boost::system::error_code &ec);
@@ -35,6 +41,7 @@ class TCPConnection
   tcp::socket socket_;
   boost::asio::streambuf input_buffer_;
   std::string message_;
+  KVStore::AMOStore *app_;
 };
 
 #endif  // INCLUDE_TCPCONNECTION_HPP_

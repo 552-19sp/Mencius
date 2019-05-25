@@ -23,20 +23,16 @@ endif
 SERVER_SRC = $(wildcard $(SRCDIR)/server/*.cpp)
 SERVER_OBJ = $(SERVER_SRC:$(SRCDIR)/server/%.cpp=$(OBJDIR)/server/%.o)
 
-# Client doesn't need KVStore.
-CLIENT_UTIL_SRC = $(wildcard $(SRCDIR)/util/*.cpp)
-CLIENT_UTIL_OBJ = $(CLIENT_UTIL_SRC:$(SRCDIR)/util/%.cpp=$(OBJDIR)/%.o)
-
-SERVER_UTIL_SRC = $(CLIENT_UTIL_SRC) $(wildcard $(SRCDIR)/util/*/*.cpp)
-SERVER_UTIL_OBJ = $(SERVER_UTIL_SRC:$(SRCDIR)/util/%.cpp=$(OBJDIR)/%.o)
+UTIL_SRC = $(wildcard $(SRCDIR)/util/*.cpp) $(wildcard $(SRCDIR)/util/*/*.cpp)
+UTIL_OBJ = $(UTIL_SRC:$(SRCDIR)/util/%.cpp=$(OBJDIR)/%.o)
 
 
 all: client server
 
-client: obj/client/Client.o $(CLIENT_UTIL_OBJ)
+client: obj/client/Client.o $(UTIL_OBJ)
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
-server: $(SERVER_OBJ) $(SERVER_UTIL_OBJ)
+server: $(SERVER_OBJ) $(UTIL_OBJ)
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/util/%.cpp

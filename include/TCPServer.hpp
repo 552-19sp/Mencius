@@ -6,6 +6,7 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
+#include "AMOStore.hpp"
 #include "TCPConnection.hpp"
 
 using boost::asio::ip::tcp;
@@ -13,6 +14,8 @@ using boost::asio::ip::tcp;
 class TCPServer {
  public:
   TCPServer(boost::asio::io_context &io_context, int port);
+
+  // TODO(ljoswiak): Clean up app_ on object destruction
 
  private:
   void StartAccept();
@@ -22,6 +25,7 @@ class TCPServer {
 
   boost::asio::io_context &io_context_;
   tcp::acceptor acceptor_;
+  KVStore::AMOStore *app_;
 };
 
 #endif  // INCLUDE_TCPSERVER_HPP_

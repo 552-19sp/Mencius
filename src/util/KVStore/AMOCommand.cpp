@@ -32,4 +32,19 @@ string AMOCommand::GetValue() const {
 Action AMOCommand::GetAction() const {
   return action_;
 }
+
+std::string AMOCommand::Encode() const {
+  std::ostringstream archive_stream;
+  boost::archive::text_oarchive oa(archive_stream);
+  oa << *this;
+  return archive_stream.str();
+}
+
+AMOCommand AMOCommand::Decode(const std::string data) {
+  AMOCommand c;
+  std::istringstream archive_stream(data);
+  boost::archive::text_iarchive archive(archive_stream);
+  archive >> c;
+  return c;
+}
 }  // namespace KVStore

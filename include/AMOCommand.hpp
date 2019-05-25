@@ -4,6 +4,7 @@
 #define INCLUDE_AMOCOMMAND_HPP_
 
 #include <string>
+#include <sstream>
 
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -24,6 +25,10 @@ class AMOCommand {
   std::string GetKey() const;
   std::string GetValue() const;
   Action GetAction() const;
+
+  std::string Encode() const;
+
+  static AMOCommand Decode(const std::string data);
 
  private:
   friend class boost::serialization::access;

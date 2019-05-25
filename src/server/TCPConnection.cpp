@@ -4,32 +4,48 @@
 
 #include <iostream>
 
+#include "AMOResponse.hpp"
 #include "Message.hpp"
 #include "KVStore.hpp"
 
 TCPConnection::pointer TCPConnection::Create(
-    boost::asio::io_context &io_context) {
-  return pointer(new TCPConnection(io_context));
+    boost::asio::io_context &io_context,
+    KVStore::AMOStore *app) {
+  return pointer(new TCPConnection(io_context, app));
 }
 
 void TCPConnection::Start() {
-  message_ = "hello from server";
-
   std::cout << "Client connected -- "
       << socket_.remote_endpoint() << std::endl;
-
-  // Separate into write function
-  boost::asio::async_write(socket_, boost::asio::buffer(message_),
-    boost::bind(&TCPConnection::HandleWrite, shared_from_this()));
 
   StartRead();
 }
 
-TCPConnection::TCPConnection(boost::asio::io_context &io_context)
-    : socket_(io_context) {
+TCPConnection::TCPConnection(boost::asio::io_context &io_context,
+    KVStore::AMOStore *app)
+    : socket_(io_context),
+      app_(app) {
+  std::cout << "connection app addr: " << app_ << std::endl;
 }
 
-void TCPConnection::HandleWrite() {
+void TCPConnection::StartWrite() {
+  std::cout << "Sending message to client" << std::endl;
+
+  boost::asio::async_write(socket_,
+    boost::asio::buffer(message_),
+    boost::bind(&TCPConnection::HandleWrite, shared_from_this(), _1));
+  // TODO(ljoswiak): Can also set a deadline for message sends.
+}
+
+void TCPConnection::HandleWrite(const boost::system::error_code &ec) {
+  if (!ec) {
+    /*
+    write_timer_.expires_after(boost::asio::chrono::seconds(10));
+    write_timer_.async_wait(boost::bind(&Client::StartWrite, this));
+    */
+  } else {
+    std::cerr << "Error on write: " << ec.message() << std::endl;
+  }
 }
 
 void TCPConnection::StartRead() {
@@ -47,13 +63,21 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
     std::istream is(&input_buffer_);
     std::getline(is, data);
 
-    std::cout << "Received serialized message: " << data << std::endl;
-
     Message m = Message::Decode(data);
-    std::cout << "Decoded message: " << m.GetEncodedMessage() << std::endl;
+    if (m.GetMessageType() == MessageType::Request) {
+      std::cout << "Received request" << std::endl;
+
+      auto command = KVStore::AMOCommand::Decode(m.GetEncodedMessage());
+
+      auto response = app_->Execute(command).Encode();
+      auto encoded = Message(response, MessageType::Reply).Encode();
+
+      message_ = encoded;
+      StartWrite();
+    }
 
     StartRead();
   } else {
-    std::cout << "Error on read: " << ec.message() << std::endl;
+    std::cerr << "Error on read: " << ec.message() << std::endl;
   }
 }

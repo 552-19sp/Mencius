@@ -17,14 +17,13 @@ namespace KVStore {
 using std::string;
 using std::map;
 
-AMOStore::AMOStore():kv_store_(KVStore()) {}
+AMOStore::AMOStore() : kv_store_(KVStore()) {}
 
 bool AMOStore::AlreadyExecuted(const AMOCommand &command) const {
   return prev_.find(command) != prev_.end();
 }
 
-AMOResponse AMOStore::Execute(
-                const AMOCommand &command) {
+AMOResponse AMOStore::Execute(const AMOCommand &command) {
   string s;
   if (!AlreadyExecuted(command)) {
     switch (command.GetAction()) {

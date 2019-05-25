@@ -7,12 +7,13 @@
 TCPServer::TCPServer(boost::asio::io_context &io_context, int port)
     : io_context_(io_context),
       acceptor_(io_context, tcp::endpoint(tcp::v4(), port)) {
+  app_ = new KVStore::AMOStore();
   StartAccept();
 }
 
 void TCPServer::StartAccept() {
   TCPConnection::pointer new_connection =
-    TCPConnection::Create(io_context_);
+    TCPConnection::Create(io_context_, app_);
 
   acceptor_.async_accept(new_connection->Socket(),
     boost::bind(&TCPServer::HandleAccept,

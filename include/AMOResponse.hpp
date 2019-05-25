@@ -4,6 +4,7 @@
 #define INCLUDE_AMORESPONSE_HPP_
 
 #include <string>
+#include <sstream>
 
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -21,6 +22,10 @@ class AMOResponse {
 
   AMOCommand GetCommand() const;
   std::string GetValue() const;
+
+  std::string Encode() const;
+
+  static AMOResponse Decode(const std::string data);
 
  private:
   friend class boost::serialization::access;
