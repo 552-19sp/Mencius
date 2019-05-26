@@ -13,7 +13,8 @@
 
 enum MessageType {
   Request,
-  Reply
+  Response,
+  ServerSetup
 };
 
 class Message {
@@ -40,7 +41,7 @@ class Message {
   friend class boost::serialization::access;
 
   template<class Archive> void serialize(Archive &ar,
-      unsigned int version) {
+      unsigned int _ /* version */) {
     ar & encoded_message_;
     ar & type_;
   }

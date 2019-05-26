@@ -36,4 +36,7 @@ bin/
 # Editor files
 *.swp
 
+# Tags
+tags
+
 .DS_Store

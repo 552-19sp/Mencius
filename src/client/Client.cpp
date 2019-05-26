@@ -39,10 +39,10 @@ void Client::StartConnect(tcp::resolver::iterator endpoint_iter) {
     read_timer_.expires_after(boost::asio::chrono::seconds(60));
 
     socket_.async_connect(endpoint_iter->endpoint(),
-        boost::bind(&Client::HandleConnect,
-        this,
-        _1,
-        endpoint_iter));
+      boost::bind(&Client::HandleConnect,
+      this,
+      _1,
+      endpoint_iter));
   } else {
     // No more endpoints to try, shut down client.
     Stop();
@@ -96,7 +96,7 @@ void Client::HandleRead(const boost::system::error_code &ec) {
 
     if (!data.empty()) {
       Message m = Message::Decode(data);
-      if (m.GetMessageType() == MessageType::Reply) {
+      if (m.GetMessageType() == MessageType::Response) {
         auto response = KVStore::AMOResponse::Decode(m.GetEncodedMessage());
 
         auto value = response.GetValue();

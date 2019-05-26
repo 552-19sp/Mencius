@@ -34,7 +34,7 @@ class AMOCommand {
   friend class boost::serialization::access;
 
   template<class Archive> void serialize(Archive &ar,
-      unsigned int version) {
+      unsigned int _ /* version */) {
     ar & seq_num_;
     ar & key_;
     ar & value_;

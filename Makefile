@@ -51,7 +51,7 @@ $(OBJDIR) $(BINDIR):
 	mkdir -p $@ obj/client obj/server obj/KVStore
 
 cpplint:
-	cpplint --filter=-runtime/references --recursive */*
+	cpplint --filter=-runtime/references,-build/c++11 --recursive */*
 
 .PHONY: clean
 clean:
