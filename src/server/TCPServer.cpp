@@ -18,20 +18,18 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
       port_(port),
       acceptor_(io_context, tcp::endpoint(tcp::v4(), std::stoi(port))),
       resolver_(io_context),
-      num_servers_(servers.size() + 1) {
+      num_servers_(servers.size()) {
   std::cout << "max number of servers: " << num_servers_ << std::endl;
   // TODO(ljoswiak): This should repeat on a timer to reopen any
   // dropped connections.
   // Open connections with other servers.
   for (const auto &address : servers) {
     auto other_port = std::get<1>(address);
+    // Don't try to open connection to self.
     if (other_port.compare(port) != 0) {
-      // Don't try to open connection to self.
       std::string hostname = std::get<0>(address) + ":" + other_port;
       std::string server_name = std::get<2>(address);
-      if (server_connections_.find(other_port) == server_connections_.end()) {
-        StartConnect(hostname, server_name);
-      }
+      StartConnect(hostname, server_name);
     } else {
       name_ = std::get<2>(address);
     }
@@ -52,7 +50,7 @@ void TCPServer::StartConnect(const std::string &hostname,
     std::cout << "Trying to resolve " << endpoint_iter->endpoint() << std::endl;
 
     TCPConnection::pointer new_connection =
-      TCPConnection::Create(io_context_, app_, &server_connections_);
+      TCPConnection::Create(channel_, io_context_, app_);
     new_connection->Socket().async_connect(endpoint_iter->endpoint(),
       boost::bind(&TCPServer::HandleServerConnect,
       this,
@@ -77,8 +75,8 @@ void TCPServer::HandleServerConnect(const boost::system::error_code &ec,
     // Connection successfully established.
     std::cout << "Established connection with server "
       << endpoint_iter->endpoint() << std::endl;
-    server_connections_[server_name] = new_connection;
     new_connection->Start();
+    channel_.Add(new_connection);
 
     // Send initial ServerAccept with information about this
     // server to newly connected server.
@@ -90,7 +88,7 @@ void TCPServer::HandleServerConnect(const boost::system::error_code &ec,
 
 void TCPServer::StartAccept() {
   TCPConnection::pointer new_connection =
-    TCPConnection::Create(io_context_, app_, &server_connections_);
+    TCPConnection::Create(channel_, io_context_, app_);
 
   acceptor_.async_accept(new_connection->Socket(),
     boost::bind(&TCPServer::HandleAccept,

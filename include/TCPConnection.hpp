@@ -15,6 +15,8 @@
 #include "AMOStore.hpp"
 #include "ServerAccept.hpp"
 
+class Channel;
+
 using boost::asio::ip::tcp;
 
 class TCPConnection
@@ -22,10 +24,11 @@ class TCPConnection
  public:
   typedef boost::shared_ptr<TCPConnection> pointer;
 
-  static pointer Create(boost::asio::io_context &io_context,
-    KVStore::AMOStore *app,
-    std::unordered_map<std::string,
-      TCPConnection::pointer> *server_connections);
+  static pointer Create(Channel &channel,
+    boost::asio::io_context &io_context,
+    KVStore::AMOStore *app);
+
+  ~TCPConnection();
 
   tcp::socket &Socket() {
     return socket_;
@@ -36,12 +39,9 @@ class TCPConnection
   void Deliver(const std::string &message);
 
  private:
-  explicit TCPConnection(boost::asio::io_context &io_context,
-    KVStore::AMOStore *app,
-    std::unordered_map<std::string,
-      TCPConnection::pointer> *server_connections);
-
-  void PrintServers();
+  explicit TCPConnection(Channel &channel,
+    boost::asio::io_context &io_context,
+    KVStore::AMOStore *app);
 
   void Stop();
   bool Stopped() const;
@@ -56,14 +56,13 @@ class TCPConnection
   void HandleRequest(const KVStore::AMOCommand &m);
   void HandleServerAccept(const ServerAccept &m);
 
+  Channel &channel_;
   tcp::socket socket_;
   boost::asio::streambuf input_buffer_;
   std::deque<std::string> output_queue_;
   boost::asio::steady_timer non_empty_output_queue_;
-  boost::asio::steady_timer servers_timer_;
 
   KVStore::AMOStore *app_;
-  std::unordered_map<std::string, TCPConnection::pointer> *server_connections_;
 };
 
 #endif  // INCLUDE_TCPCONNECTION_HPP_

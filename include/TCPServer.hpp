@@ -12,6 +12,7 @@
 #include <boost/bind.hpp>
 
 #include "AMOStore.hpp"
+#include "Channel.hpp"
 #include "Message.hpp"
 #include "TCPConnection.hpp"
 
@@ -43,9 +44,10 @@ class TCPServer {
   std::string name_;
   tcp::acceptor acceptor_;
   tcp::resolver resolver_;
+  Channel channel_;
+
   KVStore::AMOStore *app_;
 
-  std::unordered_map<std::string, TCPConnection::pointer> server_connections_;
   int num_servers_;
 };
 

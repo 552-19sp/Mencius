@@ -6,55 +6,43 @@
 #include <iostream>
 
 #include "AMOResponse.hpp"
+#include "Channel.hpp"
 #include "Message.hpp"
 #include "KVStore.hpp"
 
 TCPConnection::pointer TCPConnection::Create(
+    Channel &channel,
     boost::asio::io_context &io_context,
-    KVStore::AMOStore *app,
-    std::unordered_map<std::string,
-      TCPConnection::pointer> *server_connections) {
-  return pointer(new TCPConnection(io_context, app, server_connections));
+    KVStore::AMOStore *app) {
+  return pointer(new TCPConnection(channel, io_context, app));
 }
 
 void TCPConnection::Start() {
   std::cout << "Client connected -- "
       << socket_.remote_endpoint() << std::endl;
 
-  servers_timer_.async_wait(
-    boost::bind(&TCPConnection::PrintServers, shared_from_this()));
   StartRead();
   AwaitOutput();
 }
 
-void TCPConnection::PrintServers() {
-  std::cout << "I know about this many servers: "
-    << server_connections_->size() << std::endl;
-  for (auto connection : *server_connections_) {
-    std::cout << "  " << connection.first << std::endl;
-  }
-
-  servers_timer_.expires_after(std::chrono::seconds(5));
-  servers_timer_.async_wait(
-    boost::bind(&TCPConnection::PrintServers, shared_from_this()));
-}
-
-TCPConnection::TCPConnection(boost::asio::io_context &io_context,
-    KVStore::AMOStore *app,
-    std::unordered_map<std::string, TCPConnection::pointer> *server_connections)
-    : socket_(io_context),
+TCPConnection::TCPConnection(Channel &channel,
+    boost::asio::io_context &io_context,
+    KVStore::AMOStore *app)
+    : channel_(channel),
+      socket_(io_context),
       non_empty_output_queue_(io_context),
-      servers_timer_(io_context),
-      app_(app),
-      server_connections_(server_connections) {
+      app_(app) {
   // Set timer to max value when queue is empty.
   non_empty_output_queue_.expires_after(std::chrono::hours(9999));
+}
 
-  servers_timer_.expires_after(std::chrono::seconds(5));
+TCPConnection::~TCPConnection() {
+  std::cout << "TCPConnection destructor" << std::endl;
 }
 
 void TCPConnection::Stop() {
   std::cout << "Closing connection" << std::endl;
+  channel_.Remove(shared_from_this());
   socket_.close();
   non_empty_output_queue_.cancel();
 }
@@ -131,8 +119,6 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
 
     Message m = Message::Decode(data);
     if (m.GetMessageType() == MessageType::Request) {
-      std::cout << "Received request" << std::endl;
-
       auto command = KVStore::AMOCommand::Decode(m.GetEncodedMessage());
       HandleRequest(command);
     } else if (m.GetMessageType() == MessageType::ServerSetup) {
@@ -150,13 +136,18 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
 void TCPConnection::HandleRequest(const KVStore::AMOCommand &m) {
   // TODO(ljoswiak): Replicate before executing
   std::cout << "Received request" << std::endl;
+  /*
   auto response = app_->Execute(m).Encode();
   auto encoded = Message(response, MessageType::Response).Encode();
+  */
+  auto encoded = Message(m.Encode(), MessageType::Request).Encode();
 
-  Deliver(encoded);
+  // Send to all other servers.
+  channel_.Deliver(encoded);
 }
 
 void TCPConnection::HandleServerAccept(const ServerAccept &m) {
   std::cout << "Received ServerAccept" << std::endl;
-  (*server_connections_)[m.GetServerName()] = shared_from_this();
+  // (*server_connections_)[m.GetServerName()] = shared_from_this();
+  channel_.Add(shared_from_this());
 }
