@@ -13,6 +13,8 @@
 #include <boost/shared_ptr.hpp>
 
 #include "AMOStore.hpp"
+#include "Replicate.hpp"
+#include "ReplicateAck.hpp"
 #include "Request.hpp"
 #include "ServerAccept.hpp"
 
@@ -54,8 +56,10 @@ class TCPConnection
   void StartRead();
   void HandleRead(const boost::system::error_code &ec);
 
-  void HandleRequest(const message::Request &m);
   void HandleServerAccept(const message::ServerAccept &m);
+  void HandleRequest(const message::Request &m);
+  void HandleReplicate(const message::Replicate &m);
+  void HandleReplicateAck(const message::ReplicateAck &m);
 
   Channel &channel_;
   tcp::socket socket_;

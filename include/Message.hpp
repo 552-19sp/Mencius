@@ -16,7 +16,9 @@ namespace message {
 enum MessageType {
   kRequest,
   kResponse,
-  kServerSetup
+  kServerSetup,
+  kReplicate,
+  kReplicateAck
 };
 
 class Message {
