@@ -1,7 +1,7 @@
 // Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu
 
-#ifndef INCLUDE_SERVERACCEPT_HPP_
-#define INCLUDE_SERVERACCEPT_HPP_
+#ifndef INCLUDE_RESPONSE_HPP_
+#define INCLUDE_RESPONSE_HPP_
 
 #include <string>
 #include <sstream>
@@ -9,32 +9,34 @@
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 
+#include "AMOResponse.hpp"
+
 namespace message {
 
-class ServerAccept {
+class Response {
  public:
-  ServerAccept();
-  explicit ServerAccept(std::string server_name);
+  Response();
+  explicit Response(KVStore::AMOResponse response);
 
-  std::string GetServerName() const {
-    return server_name_;
+  KVStore::AMOResponse GetResponse() const {
+    return response_;
   }
 
   std::string Encode() const;
 
-  static ServerAccept Decode(const std::string data);
+  static Response Decode(const std::string data);
 
  private:
   friend class boost::serialization::access;
 
   template<class Archive> void serialize(Archive &ar,
       unsigned int _ /* version */) {
-    ar & server_name_;
+    ar & response_;
   }
 
-  std::string server_name_;
+  KVStore::AMOResponse response_;
 };
 
 }  // namespace message
 
-#endif  // INCLUDE_SERVERACCEPT_HPP_
+#endif  // INCLUDE_RESPONSE_HPP_

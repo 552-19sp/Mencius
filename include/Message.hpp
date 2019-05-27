@@ -11,10 +11,12 @@
 
 #include "AMOCommand.hpp"
 
+namespace message {
+
 enum MessageType {
-  Request,
-  Response,
-  ServerSetup
+  kRequest,
+  kResponse,
+  kServerSetup
 };
 
 class Message {
@@ -49,5 +51,7 @@ class Message {
   std::string encoded_message_;
   MessageType type_;
 };
+
+}  // namespace message
 
 #endif  // INCLUDE_MESSAGE_HPP_

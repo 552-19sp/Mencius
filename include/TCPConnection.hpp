@@ -13,6 +13,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "AMOStore.hpp"
+#include "Request.hpp"
 #include "ServerAccept.hpp"
 
 class Channel;
@@ -53,8 +54,8 @@ class TCPConnection
   void StartRead();
   void HandleRead(const boost::system::error_code &ec);
 
-  void HandleRequest(const KVStore::AMOCommand &m);
-  void HandleServerAccept(const ServerAccept &m);
+  void HandleRequest(const message::Request &m);
+  void HandleServerAccept(const message::ServerAccept &m);
 
   Channel &channel_;
   tcp::socket socket_;

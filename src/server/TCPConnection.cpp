@@ -9,6 +9,7 @@
 #include "Channel.hpp"
 #include "Message.hpp"
 #include "KVStore.hpp"
+#include "Response.hpp"
 
 TCPConnection::pointer TCPConnection::Create(
     Channel &channel,
@@ -117,12 +118,12 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
     std::istream is(&input_buffer_);
     std::getline(is, data);
 
-    Message m = Message::Decode(data);
-    if (m.GetMessageType() == MessageType::Request) {
-      auto command = KVStore::AMOCommand::Decode(m.GetEncodedMessage());
+    auto m = message::Message::Decode(data);
+    if (m.GetMessageType() == message::MessageType::kRequest) {
+      auto command = message::Request::Decode(m.GetEncodedMessage());
       HandleRequest(command);
-    } else if (m.GetMessageType() == MessageType::ServerSetup) {
-      auto server_accept = ServerAccept::Decode(m.GetEncodedMessage());
+    } else if (m.GetMessageType() == message::MessageType::kServerSetup) {
+      auto server_accept = message::ServerAccept::Decode(m.GetEncodedMessage());
       HandleServerAccept(server_accept);
     }
 
@@ -133,20 +134,25 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
   }
 }
 
-void TCPConnection::HandleRequest(const KVStore::AMOCommand &m) {
+void TCPConnection::HandleRequest(const message::Request &m) {
   // TODO(ljoswiak): Replicate before executing
   std::cout << "Received request" << std::endl;
   /*
-  auto response = app_->Execute(m).Encode();
-  auto encoded = Message(response, MessageType::Response).Encode();
+  auto amo_response = app_->Execute(m.GetCommand());
+  auto response = message::Response(amo_response).Encode();
+  auto encoded = message::Message(response, message::MessageType::kResponse).Encode();
+  Deliver(encoded);
   */
-  auto encoded = Message(m.Encode(), MessageType::Request).Encode();
+  /*
+  auto encoded = message::Message(m.Encode(),
+    message::MessageType::kRequest).Encode();
+  */
 
   // Send to all other servers.
-  channel_.Deliver(encoded);
+  // channel_.Deliver(encoded);
 }
 
-void TCPConnection::HandleServerAccept(const ServerAccept &m) {
+void TCPConnection::HandleServerAccept(const message::ServerAccept &m) {
   std::cout << "Received ServerAccept" << std::endl;
   // (*server_connections_)[m.GetServerName()] = shared_from_this();
   channel_.Add(shared_from_this());

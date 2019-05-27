@@ -8,6 +8,8 @@
 #include "AMOCommand.hpp"
 #include "AMOResponse.hpp"
 #include "Message.hpp"
+#include "Request.hpp"
+#include "Response.hpp"
 #include "Utilities.hpp"
 
 Client::Client(boost::asio::io_context &io_context)
@@ -95,11 +97,11 @@ void Client::HandleRead(const boost::system::error_code &ec) {
     std::getline(is, data);
 
     if (!data.empty()) {
-      Message m = Message::Decode(data);
-      if (m.GetMessageType() == MessageType::Response) {
-        auto response = KVStore::AMOResponse::Decode(m.GetEncodedMessage());
+      auto m = message::Message::Decode(data);
+      if (m.GetMessageType() == message::MessageType::kResponse) {
+        auto response = message::Response::Decode(m.GetEncodedMessage());
 
-        auto value = response.GetValue();
+        auto value = response.GetResponse().GetValue();
         std::cout << "Received reply. Value: " << value << std::endl;
       }
     }
@@ -121,8 +123,10 @@ void Client::StartWrite() {
 
   const std::string key = "foo";
   const std::string value = "bar";
-  auto command = KVStore::AMOCommand(0, key, value, KVStore::PUT).Encode();
-  auto encoded = Message(command, MessageType::Request).Encode();
+  auto command = KVStore::AMOCommand(0, key, value, KVStore::PUT);
+  auto request = message::Request(command);
+  auto encoded = message::Message(request.Encode(),
+    message::MessageType::kRequest).Encode();
   std::cout << "Sending request to server" << std::endl;
 
   boost::asio::async_write(socket_,

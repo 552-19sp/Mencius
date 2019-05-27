@@ -23,10 +23,6 @@ class AMOResponse {
   AMOCommand GetCommand() const;
   std::string GetValue() const;
 
-  std::string Encode() const;
-
-  static AMOResponse Decode(const std::string data);
-
  private:
   friend class boost::serialization::access;
 

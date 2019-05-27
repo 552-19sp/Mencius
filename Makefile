@@ -26,16 +26,21 @@ SERVER_OBJ = $(SERVER_SRC:$(SRCDIR)/server/%.cpp=$(OBJDIR)/server/%.o)
 UTIL_SRC = $(wildcard $(SRCDIR)/util/*.cpp) $(wildcard $(SRCDIR)/util/*/*.cpp)
 UTIL_OBJ = $(UTIL_SRC:$(SRCDIR)/util/%.cpp=$(OBJDIR)/%.o)
 
+MESSAGE_SRC = $(wildcard $(SRCDIR)/message/*.cpp)
+MESSAGE_OBJ = $(MESSAGE_SRC:$(SRCDIR)/message/%.cpp=$(OBJDIR)/%.o)
 
 all: client server
 
-client: obj/client/Client.o $(UTIL_OBJ)
+client: obj/client/Client.o $(UTIL_OBJ) $(MESSAGE_OBJ)
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
-server: $(SERVER_OBJ) $(UTIL_OBJ)
+server: $(SERVER_OBJ) $(UTIL_OBJ) $(MESSAGE_OBJ)
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/util/%.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR)/%.o: $(SRCDIR)/message/%.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/KVStore/%.o: $(SRCDIR)/util/KVStore/%.cpp

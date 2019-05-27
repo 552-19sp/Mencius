@@ -26,10 +26,6 @@ class AMOCommand {
   std::string GetValue() const;
   Action GetAction() const;
 
-  std::string Encode() const;
-
-  static AMOCommand Decode(const std::string data);
-
  private:
   friend class boost::serialization::access;
 

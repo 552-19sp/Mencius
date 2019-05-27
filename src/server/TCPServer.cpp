@@ -80,8 +80,9 @@ void TCPServer::HandleServerConnect(const boost::system::error_code &ec,
 
     // Send initial ServerAccept with information about this
     // server to newly connected server.
-    auto sa = ServerAccept(name_).Encode();
-    auto encoded = Message(sa, MessageType::ServerSetup).Encode();
+    auto sa = message::ServerAccept(name_).Encode();
+    auto encoded = message::Message(sa,
+      message::MessageType::kServerSetup).Encode();
     new_connection->Deliver(encoded);
   }
 }

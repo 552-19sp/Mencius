@@ -2,6 +2,8 @@
 
 #include "Message.hpp"
 
+namespace message {
+
 Message::Message() {}
 
 Message::Message(std::string encoded_message, MessageType type)
@@ -22,3 +24,5 @@ Message Message::Decode(const std::string data) {
   archive >> m;
   return m;
 }
+
+}  // namespace message

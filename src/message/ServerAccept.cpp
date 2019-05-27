@@ -1,6 +1,8 @@
-// Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu"
+// Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu
 
 #include "ServerAccept.hpp"
+
+namespace message {
 
 ServerAccept::ServerAccept() {}
 
@@ -21,3 +23,5 @@ ServerAccept ServerAccept::Decode(const std::string data) {
   archive >> m;
   return m;
 }
+
+}  // namespace message
