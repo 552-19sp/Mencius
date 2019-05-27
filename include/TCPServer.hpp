@@ -21,15 +21,16 @@ class TCPServer {
  public:
   TCPServer(boost::asio::io_context &io_context,
     std::string port,
-    std::vector<std::tuple<std::string, std::string>> &servers);
+    std::vector<std::tuple<std::string, std::string, std::string>> &servers);
 
   // TODO(ljoswiak): Clean up app_ on object destruction
 
  private:
-  void StartConnect(const std::string &hostname);
-  void HandleServerAccept(const boost::system::error_code &ec,
+  void StartConnect(const std::string &hostname,
+    const std::string &server_name);
+  void HandleServerConnect(const boost::system::error_code &ec,
     TCPConnection::pointer new_connection,
-    std::string &port,
+    std::string &server_name,
     tcp::resolver::iterator endpoint_iter);
 
   void StartAccept();
@@ -39,6 +40,7 @@ class TCPServer {
 
   boost::asio::io_context &io_context_;
   std::string port_;
+  std::string name_;
   tcp::acceptor acceptor_;
   tcp::resolver resolver_;
   KVStore::AMOStore *app_;

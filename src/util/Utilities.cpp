@@ -9,10 +9,11 @@
 
 const int kMaxConfigLineLength = 255;
 
-std::vector<std::tuple<std::string, std::string>> Utilities::ReadConfig(
-    const std::string &config_path) {
+std::vector<std::tuple<std::string, std::string, std::string>>
+    Utilities::ReadConfig(const std::string &config_path) {
   // Read list of host names and ports from config file.
-  std::vector<std::tuple<std::string, std::string>> server_addresses;
+  std::vector<std::tuple<std::string,
+    std::string, std::string>> server_addresses;
 
   std::ifstream config_file(config_path);
   if (!config_file) {
@@ -27,8 +28,12 @@ std::vector<std::tuple<std::string, std::string>> Utilities::ReadConfig(
     if (config_file) {
       int pos = line.find_first_of(' ');
       auto host = line.substr(0, pos);
-      auto port = line.substr(pos + 1);
-      server_addresses.push_back(std::make_tuple(host.c_str(), port.c_str()));
+      auto port_name = line.substr(pos + 1);
+      pos = port_name.find_first_of(' ');
+      auto port = port_name.substr(0, pos);
+      auto name = port_name.substr(pos + 1);
+      server_addresses.push_back(
+        std::make_tuple(host.c_str(), port.c_str(), name.c_str()));
     }
   }
 

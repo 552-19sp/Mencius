@@ -4,8 +4,8 @@
 
 ServerAccept::ServerAccept() {}
 
-ServerAccept::ServerAccept(std::string local_port)
-    : local_port_(local_port) {}
+ServerAccept::ServerAccept(std::string server_name)
+    : server_name_(server_name) {}
 
 std::string ServerAccept::Encode() const {
   std::ostringstream archive_stream;

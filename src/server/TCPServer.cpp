@@ -13,7 +13,7 @@ const char kConfigFilePath[] = "config";
 
 TCPServer::TCPServer(boost::asio::io_context &io_context,
     std::string port,
-    std::vector<std::tuple<std::string, std::string>> &servers)
+    std::vector<std::tuple<std::string, std::string, std::string>> &servers)
     : io_context_(io_context),
       port_(port),
       acceptor_(io_context, tcp::endpoint(tcp::v4(), std::stoi(port))),
@@ -28,9 +28,12 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
     if (other_port.compare(port) != 0) {
       // Don't try to open connection to self.
       std::string hostname = std::get<0>(address) + ":" + other_port;
+      std::string server_name = std::get<2>(address);
       if (server_connections_.find(other_port) == server_connections_.end()) {
-        StartConnect(hostname);
+        StartConnect(hostname, server_name);
       }
+    } else {
+      name_ = std::get<2>(address);
     }
   }
 
@@ -38,7 +41,8 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
   StartAccept();
 }
 
-void TCPServer::StartConnect(const std::string &hostname) {
+void TCPServer::StartConnect(const std::string &hostname,
+    const std::string &server_name) {
   std::vector<std::string> parts;
   boost::split(parts, hostname, boost::is_any_of(":"));
   auto host = parts[0];
@@ -50,20 +54,20 @@ void TCPServer::StartConnect(const std::string &hostname) {
     TCPConnection::pointer new_connection =
       TCPConnection::Create(io_context_, app_, &server_connections_);
     new_connection->Socket().async_connect(endpoint_iter->endpoint(),
-      boost::bind(&TCPServer::HandleServerAccept,
+      boost::bind(&TCPServer::HandleServerConnect,
       this,
       _1,
       new_connection,
-      port,
+      server_name,
       endpoint_iter));
   } else {
     std::cerr << "error" << std::endl;
   }
 }
 
-void TCPServer::HandleServerAccept(const boost::system::error_code &ec,
+void TCPServer::HandleServerConnect(const boost::system::error_code &ec,
     TCPConnection::pointer new_connection,
-    std::string &port,
+    std::string &server_name,
     tcp::resolver::iterator endpoint_iter) {
   if (!new_connection->Socket().is_open()) {
     std::cerr << "Connect timed out" << std::endl;
@@ -73,12 +77,12 @@ void TCPServer::HandleServerAccept(const boost::system::error_code &ec,
     // Connection successfully established.
     std::cout << "Established connection with server "
       << endpoint_iter->endpoint() << std::endl;
-    server_connections_[port] = new_connection;
+    server_connections_[server_name] = new_connection;
     new_connection->Start();
 
     // Send initial ServerAccept with information about this
     // server to newly connected server.
-    auto sa = ServerAccept(port_).Encode();
+    auto sa = ServerAccept(name_).Encode();
     auto encoded = Message(sa, MessageType::ServerSetup).Encode();
     new_connection->Deliver(encoded);
   }

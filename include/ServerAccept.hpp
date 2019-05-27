@@ -12,10 +12,10 @@
 class ServerAccept {
  public:
   ServerAccept();
-  explicit ServerAccept(std::string local_port);
+  explicit ServerAccept(std::string server_name);
 
-  std::string GetLocalPort() const {
-    return local_port_;
+  std::string GetServerName() const {
+    return server_name_;
   }
 
   std::string Encode() const;
@@ -27,10 +27,10 @@ class ServerAccept {
 
   template<class Archive> void serialize(Archive &ar,
       unsigned int _ /* version */) {
-    ar & local_port_;
+    ar & server_name_;
   }
 
-  std::string local_port_;
+  std::string server_name_;
 };
 
 #endif  // INCLUDE_SERVERACCEPT_HPP_

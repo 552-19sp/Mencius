@@ -130,7 +130,6 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
     std::getline(is, data);
 
     Message m = Message::Decode(data);
-    std::cout << m.GetMessageType() << std::endl;
     if (m.GetMessageType() == MessageType::Request) {
       std::cout << "Received request" << std::endl;
 
@@ -159,5 +158,5 @@ void TCPConnection::HandleRequest(const KVStore::AMOCommand &m) {
 
 void TCPConnection::HandleServerAccept(const ServerAccept &m) {
   std::cout << "Received ServerAccept" << std::endl;
-  (*server_connections_)[m.GetLocalPort()] = shared_from_this();
+  (*server_connections_)[m.GetServerName()] = shared_from_this();
 }
