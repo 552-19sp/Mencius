@@ -7,6 +7,8 @@
 #include <tuple>
 #include <vector>
 
+#include "AMOCommand.hpp"
+
 class Utilities {
  private:
   // Flag for enabling debug printing
@@ -19,7 +21,7 @@ class Utilities {
   // Given a string of comma separated operations,
   // parses the operations and returns each operation
   // separated into a vector.
-  static std::vector<std::string> ParseOperations(char *unparsed_ops);
+  static std::vector<KVStore::AMOCommand> ParseOperations(char *unparsed_ops);
 
   // Given a string, prints the string delimited with a new line
   // if kDebugPrint flag is enabled

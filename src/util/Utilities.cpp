@@ -1,11 +1,14 @@
 // Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu.
 
-#include <string.h>
+#include "Utilities.hpp"
 
+#include <string.h>
 #include <fstream>
 #include <iostream>
 
-#include "Utilities.hpp"
+#include <boost/algorithm/string.hpp>
+
+#include "AMOCommand.hpp"
 
 const int kMaxConfigLineLength = 255;
 
@@ -40,18 +43,33 @@ std::vector<std::tuple<std::string, std::string, std::string>>
   return server_addresses;
 }
 
-std::vector<std::string> Utilities::ParseOperations(char *unparsed_ops) {
-  // Parse operations from command argument.
-  std::vector<std::string> parsed_ops;
+std::vector<KVStore::AMOCommand> Utilities::ParseOperations(
+    char *unparsed_ops) {
+  std::vector<std::string> str_ops;
+  boost::split(str_ops, unparsed_ops, boost::is_any_of(","));
 
-  char *saveptr;
-  char *token = strtok_r(unparsed_ops, ",", &saveptr);
+  std::vector<KVStore::AMOCommand> ops;
+  for (int i = 0; i < str_ops.size(); i++) {
+      std::vector<std::string> op_parts;
+      boost::split(op_parts, str_ops[i], boost::is_any_of(" "));
+      std::string action_str = op_parts[0];
+      std::string key = op_parts[1];
+      std::string value = "";
+      KVStore::Action action = KVStore::Action::GET;
 
-  while (token != NULL) {
-    parsed_ops.push_back(std::string(token));
-    token = strtok_r(NULL, ",", &saveptr);
+      // TODO(jjohnson): Add support for other types of ops.
+      if (action_str.compare("PUT") == 0) {
+        value = op_parts[2];
+        action = KVStore::Action::PUT;
+      } else {
+        return ops;
+      }
+
+      KVStore::AMOCommand op(i, key, value, action);
+      ops.push_back(op);
   }
-  return parsed_ops;
+
+  return ops;
 }
 
 void Utilities::DebugPrint(std::string s) {

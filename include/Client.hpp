@@ -4,7 +4,13 @@
 #define INCLUDE_CLIENT_HPP_
 
 #include <iostream>
+#include <memory>
 #include <string>
+#include <vector>
+
+#include "AMOCommand.hpp"
+#include "Request.hpp"
+#include "Response.hpp"
 
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
@@ -13,25 +19,33 @@ using boost::asio::ip::tcp;
 
 class Client {
  public:
-  explicit Client(boost::asio::io_context &io_context);
+  explicit Client(boost::asio::io_context &io_context,
+    const std::vector<KVStore::AMOCommand> &workload);
 
   void Start(tcp::resolver::iterator endpoint_iter);
   void Stop();
+
  private:
   void StartConnect(tcp::resolver::iterator endpoint_iter);
   void HandleConnect(const boost::system::error_code &ec,
     tcp::resolver::iterator endpoint_iter);
 
+  void ProcessWorkload();
+
   void StartRead();
   void HandleRead(const boost::system::error_code &ec);
 
-  void StartWrite();
-  void HandleWrite(const boost::system::error_code &ec);
+  void StartWrite(KVStore::AMOCommand command);
+  void HandleWriteResult(const boost::system::error_code &ec,
+    KVStore::AMOCommand command);
 
   void CheckDeadline();
 
   bool stopped_;
   tcp::socket socket_;
+  std::shared_ptr<message::Request> last_request_;
+  std::shared_ptr<message::Request> last_response_;
+  std::vector<KVStore::AMOCommand> workload_;
   boost::asio::streambuf input_buffer_;
   boost::asio::steady_timer read_timer_;
   boost::asio::steady_timer write_timer_;

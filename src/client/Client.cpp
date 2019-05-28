@@ -12,9 +12,11 @@
 #include "Response.hpp"
 #include "Utilities.hpp"
 
-Client::Client(boost::asio::io_context &io_context)
+Client::Client(boost::asio::io_context &io_context,
+  const std::vector<KVStore::AMOCommand> &workload)
   : stopped_(false),
     socket_(io_context),
+    workload_(workload),
     read_timer_(io_context),
     write_timer_(io_context) {
 }
@@ -71,9 +73,17 @@ void Client::HandleConnect(const boost::system::error_code &ec,
   } else {
     // Connection successfully established.
     std::cout << "Connected to " << endpoint_iter->endpoint() << std::endl;
+    ProcessWorkload();
+  }
+}
 
-    StartRead();
-    StartWrite();
+void Client::ProcessWorkload() {
+  for (auto &command : workload_) {
+    if (command.GetAction() == KVStore::Action::PUT) {
+      StartWrite(command);
+    } else {
+      // TODO(jjohnson): handle other operation types here.
+    }
   }
 }
 
@@ -116,38 +126,34 @@ void Client::HandleRead(const boost::system::error_code &ec) {
   }
 }
 
-void Client::StartWrite() {
-  if (stopped_) {
-    return;
-  }
+void Client::StartWrite(KVStore::AMOCommand command) {
+  if (stopped_) return;
 
-  const std::string key = "foo";
-  const std::string value = "bar";
-  auto command = KVStore::AMOCommand(0, key, value, KVStore::PUT);
-  auto request = message::Request(command);
-  auto encoded = message::Message(request.Encode(),
+  last_request_ = std::make_shared<message::Request>(message::Request(command));
+  last_response_ = nullptr;
+  auto encoded = message::Message(last_request_->Encode(),
     message::MessageType::kRequest).Encode();
   std::cout << "Sending request to server" << std::endl;
 
   boost::asio::async_write(socket_,
       boost::asio::buffer(encoded),
-      boost::bind(&Client::HandleWrite, this, _1));
+      boost::bind(&Client::HandleWriteResult, this, _1, command));
   // TODO(ljoswiak): Can also set a deadline for message sends.
 }
 
-void Client::HandleWrite(const boost::system::error_code &ec) {
-  if (stopped_) {
-    return;
-  }
+void Client::HandleWriteResult(const boost::system::error_code &ec,
+    KVStore::AMOCommand command) {
+  if (stopped_) return;
 
   if (!ec) {
+    // TODO(jjohnson): Write this to a shared output file.
+    std::cout << "Got response to write" << std::endl;
     /*
     write_timer_.expires_after(boost::asio::chrono::seconds(10));
     write_timer_.async_wait(boost::bind(&Client::StartWrite, this));
     */
   } else {
     std::cerr << "Error on write: " << ec.message() << std::endl;
-
     Stop();
   }
 }
@@ -177,17 +183,11 @@ int main(int argc, char **argv) {
   }
 
   auto server_addresses = Utilities::ReadConfig(kConfigFilePath);
-
-  auto parsed_ops = Utilities::ParseOperations(argv[1]);
-  // For now, print ops to cout. Eventually, they will be printed
-  // to an output file after completion.
-  for (int i = 0; i < parsed_ops.size(); i++) {
-    std::cout << parsed_ops[i] << std::endl;
-  }
+  auto workload = Utilities::ParseOperations(argv[1]);
 
   boost::asio::io_context io_context;
   tcp::resolver r(io_context);
-  Client c(io_context);
+  Client c(io_context, workload);
 
   c.Start(r.resolve(tcp::resolver::query("127.0.0.1", "11111")));
 
