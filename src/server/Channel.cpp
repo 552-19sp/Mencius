@@ -25,10 +25,9 @@ void Channel::Remove(TCPConnection::pointer connection) {
   PrintConnections(connections_);
 }
 
-void Channel::Deliver(std::string &message) {
-  // TODO(ljoswiak): Deliver message
+void Channel::Deliver(const std::string &message) {
   // Call each TCPConnection's deliver method
-  std::cout << "Channel delivering" << std::endl;
+  std::cout << "Channel delivering to" << std::endl;
   PrintConnections(connections_);
   std::for_each(connections_.begin(), connections_.end(),
     boost::bind(&TCPConnection::Deliver, _1, boost::ref(message)));

@@ -7,15 +7,17 @@
 
 #include "AMOResponse.hpp"
 #include "Channel.hpp"
+#include "Handler.hpp"
 #include "Message.hpp"
 #include "KVStore.hpp"
 #include "Response.hpp"
 
 TCPConnection::pointer TCPConnection::Create(
     Channel &channel,
+    Handler &handler,
     boost::asio::io_context &io_context,
     KVStore::AMOStore *app) {
-  return pointer(new TCPConnection(channel, io_context, app));
+  return pointer(new TCPConnection(channel, handler, io_context, app));
 }
 
 void TCPConnection::Start() {
@@ -27,9 +29,11 @@ void TCPConnection::Start() {
 }
 
 TCPConnection::TCPConnection(Channel &channel,
+    Handler &handler,
     boost::asio::io_context &io_context,
     KVStore::AMOStore *app)
     : channel_(channel),
+      handler_(handler),
       socket_(io_context),
       non_empty_output_queue_(io_context),
       app_(app) {
@@ -118,62 +122,11 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
     std::istream is(&input_buffer_);
     std::getline(is, data);
 
-    auto m = message::Message::Decode(data);
-    auto type = m.GetMessageType();
-    if (type == message::MessageType::kServerSetup) {
-      auto server_accept = message::ServerAccept::Decode(m.GetEncodedMessage());
-      HandleServerAccept(server_accept);
-    } else if (type == message::MessageType::kRequest) {
-      auto request = message::Request::Decode(m.GetEncodedMessage());
-      HandleRequest(request);
-    } else if (type == message::MessageType::kReplicate) {
-      auto replicate = message::Replicate::Decode(m.GetEncodedMessage());
-      HandleReplicate(replicate);
-    } else if (type == message::MessageType::kReplicateAck) {
-      auto replicate_ack = message::ReplicateAck::Decode(m.GetEncodedMessage());
-      HandleReplicateAck(replicate_ack);
-    }
+    handler_.Handle(data, shared_from_this());
 
     StartRead();
   } else {
     std::cerr << "Error on read: " << ec.message() << std::endl;
     Stop();
   }
-}
-
-void TCPConnection::HandleServerAccept(const message::ServerAccept &m) {
-  std::cout << "Received ServerAccept" << std::endl;
-  channel_.Add(shared_from_this());
-}
-
-void TCPConnection::HandleRequest(const message::Request &m) {
-  // TODO(ljoswiak): Replicate before executing
-  std::cout << "Received request" << std::endl;
-  /*
-  auto amo_response = app_->Execute(m.GetCommand());
-  auto response = message::Response(amo_response).Encode();
-  auto encoded = message::Message(response, message::MessageType::kResponse).Encode();
-  Deliver(encoded);
-  */
-  auto replicate = message::Replicate(m.GetCommand()).Encode();
-  auto message =
-    message::Message(replicate, message::MessageType::kReplicate).Encode();
-
-  // Broadcast replicate message to all servers.
-  // TODO(ljoswiak): Also need to deliver to self.
-  channel_.Deliver(message);
-}
-
-void TCPConnection::HandleReplicate(const message::Replicate &m) {
-  std::cout << "Received replicate" << std::endl;
-  auto ack = message::ReplicateAck().Encode();
-  auto message =
-    message::Message(ack, message::MessageType::kReplicateAck).Encode();
-
-  // Send response only to the server we received the replicate from.
-  Deliver(message);
-}
-
-void TCPConnection::HandleReplicateAck(const message::ReplicateAck &m) {
-  std::cout << "Received replicate ack" << std::endl;
 }

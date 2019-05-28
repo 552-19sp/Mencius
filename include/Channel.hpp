@@ -13,7 +13,7 @@ class Channel {
   void Add(TCPConnection::pointer connection);
   void Remove(TCPConnection::pointer connection);
   // Deliver message to all connections in the channel.
-  void Deliver(std::string &message);
+  void Deliver(const std::string &message);
  private:
   std::set<TCPConnection::pointer> connections_;
 };

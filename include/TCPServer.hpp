@@ -13,6 +13,7 @@
 
 #include "AMOStore.hpp"
 #include "Channel.hpp"
+#include "Handler.hpp"
 #include "Message.hpp"
 #include "TCPConnection.hpp"
 
@@ -45,6 +46,7 @@ class TCPServer {
   tcp::acceptor acceptor_;
   tcp::resolver resolver_;
   Channel channel_;
+  Handler handler_;
 
   KVStore::AMOStore *app_;
 

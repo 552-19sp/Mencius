@@ -19,6 +19,7 @@
 #include "ServerAccept.hpp"
 
 class Channel;
+class Handler;
 
 using boost::asio::ip::tcp;
 
@@ -28,6 +29,7 @@ class TCPConnection
   typedef boost::shared_ptr<TCPConnection> pointer;
 
   static pointer Create(Channel &channel,
+    Handler &handler,
     boost::asio::io_context &io_context,
     KVStore::AMOStore *app);
 
@@ -43,6 +45,7 @@ class TCPConnection
 
  private:
   explicit TCPConnection(Channel &channel,
+    Handler &handler,
     boost::asio::io_context &io_context,
     KVStore::AMOStore *app);
 
@@ -56,12 +59,15 @@ class TCPConnection
   void StartRead();
   void HandleRead(const boost::system::error_code &ec);
 
+  /*
   void HandleServerAccept(const message::ServerAccept &m);
   void HandleRequest(const message::Request &m);
   void HandleReplicate(const message::Replicate &m);
   void HandleReplicateAck(const message::ReplicateAck &m);
+  */
 
   Channel &channel_;
+  Handler &handler_;
   tcp::socket socket_;
   boost::asio::streambuf input_buffer_;
   std::deque<std::string> output_queue_;
