@@ -53,3 +53,9 @@ std::vector<std::string> Utilities::ParseOperations(char *unparsed_ops) {
   }
   return parsed_ops;
 }
+
+void Utilities::DebugPrint(std::string s) {
+  if (kDebugPrint) {
+    std::cout << s << std::endl;
+  }
+}
