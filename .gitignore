@@ -39,4 +39,7 @@ bin/
 # Tags
 tags
 
+# Benchmarking Executables
+benchmark/benchmarks
+
 .DS_Store
