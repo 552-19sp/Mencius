@@ -1,0 +1,42 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/JustinJohnson/552/Project/src/Mencius/benchmark/benchmark/include/benchmark/benchmark.h
+stdint.h
+-
+algorithm
+-
+cassert
+-
+cstddef
+-
+iosfwd
+-
+map
+-
+set
+-
+string
+-
+vector
+-
+initializer_list
+-
+type_traits
+-
+utility
+-
+intrin.h
+-
+
+/Users/JustinJohnson/552/Project/src/Mencius/benchmark/benchmark/test/donotoptimize_test.cc
+benchmark/benchmark.h
+/Users/JustinJohnson/552/Project/src/Mencius/benchmark/benchmark/test/benchmark/benchmark.h
+cstdint
+-
+

@@ -45,7 +45,7 @@ jobs:
                 command: 'sudo pip3 install cpplint'
             - run:
                 name: Run cpplint
-                command: 'cpplint --filter=-runtime/references,-build/c++11 --recursive */*'
+                command: 'cpplint --filter=-runtime/references,-build/c++11 $(find . -name \*.h++ -or -name \*.cpp | grep -vE "^\.\/benchmark\/")'
             - run:
                 name: Install PyLint
                 command: 'sudo pip3 install pylint'
