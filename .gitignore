@@ -39,7 +39,9 @@ bin/
 # Tags
 tags
 
-# Benchmarking Executables
+# Benchmarking Library and Executables
+benchmark/benchmark
+benchmark/build
 benchmark/benchmarks
 
 .DS_Store

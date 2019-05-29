@@ -1,4 +1,6 @@
-#include <benchmark/benchmark.h>
+#include "benchmark/benchmark.h"
+
+#include <string>
 
 /* Constants */
 const int kNumReplicas[] = {3, 5};
