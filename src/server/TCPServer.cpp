@@ -18,7 +18,8 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
       port_(port),
       acceptor_(io_context, tcp::endpoint(tcp::v4(), std::stoi(port))),
       resolver_(io_context),
-      handler_(channel_),
+      app_(new KVStore::AMOStore()),
+      handler_(channel_, app_),
       num_servers_(servers.size()) {
   std::cout << "max number of servers: " << num_servers_ << std::endl;
   // TODO(ljoswiak): This should repeat on a timer to reopen any
@@ -36,7 +37,6 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
     }
   }
 
-  app_ = new KVStore::AMOStore();
   StartAccept();
 }
 
@@ -51,7 +51,7 @@ void TCPServer::StartConnect(const std::string &hostname,
     std::cout << "Trying to resolve " << endpoint_iter->endpoint() << std::endl;
 
     TCPConnection::pointer new_connection =
-      TCPConnection::Create(channel_, handler_, io_context_, app_);
+      TCPConnection::Create(channel_, handler_, io_context_);
     new_connection->Socket().async_connect(endpoint_iter->endpoint(),
       boost::bind(&TCPServer::HandleServerConnect,
       this,
@@ -90,7 +90,7 @@ void TCPServer::HandleServerConnect(const boost::system::error_code &ec,
 
 void TCPServer::StartAccept() {
   TCPConnection::pointer new_connection =
-    TCPConnection::Create(channel_, handler_, io_context_, app_);
+    TCPConnection::Create(channel_, handler_, io_context_);
 
   acceptor_.async_accept(new_connection->Socket(),
     boost::bind(&TCPServer::HandleAccept,

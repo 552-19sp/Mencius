@@ -15,9 +15,8 @@
 TCPConnection::pointer TCPConnection::Create(
     Channel &channel,
     Handler &handler,
-    boost::asio::io_context &io_context,
-    KVStore::AMOStore *app) {
-  return pointer(new TCPConnection(channel, handler, io_context, app));
+    boost::asio::io_context &io_context) {
+  return pointer(new TCPConnection(channel, handler, io_context));
 }
 
 void TCPConnection::Start() {
@@ -30,13 +29,11 @@ void TCPConnection::Start() {
 
 TCPConnection::TCPConnection(Channel &channel,
     Handler &handler,
-    boost::asio::io_context &io_context,
-    KVStore::AMOStore *app)
+    boost::asio::io_context &io_context)
     : channel_(channel),
       handler_(handler),
       socket_(io_context),
-      non_empty_output_queue_(io_context),
-      app_(app) {
+      non_empty_output_queue_(io_context) {
   // Set timer to max value when queue is empty.
   non_empty_output_queue_.expires_after(std::chrono::hours(9999));
 }

@@ -5,8 +5,12 @@
 #include <iostream>
 
 #include "Message.hpp"
+#include "Response.hpp"
 
-Handler::Handler(Channel &channel) : channel_(channel) {}
+Handler::Handler(Channel &channel, KVStore::AMOStore *app)
+  : channel_(channel),
+    app_(app) {
+}
 
 void Handler::Handle(const std::string &data,
     TCPConnection::pointer connection) {
@@ -51,16 +55,17 @@ void Handler::HandleRequest(const message::Request &m,
     TCPConnection::pointer connection) {
   // TODO(ljoswiak): Replicate before executing
   std::cout << "Received request" << std::endl;
-  /*
   auto amo_response = app_->Execute(m.GetCommand());
   auto response = message::Response(amo_response).Encode();
-  auto encoded = message::Message(response, message::MessageType::kResponse).Encode();
-  Deliver(encoded);
-  */
+  auto encoded =
+    message::Message(response, message::MessageType::kResponse).Encode();
+  Deliver(encoded, connection);
+  /*
   auto replicate = message::Replicate(m.GetCommand());
   auto message = message::Message(replicate.Encode(),
     message::MessageType::kReplicate).Encode();
   Broadcast(message);
+  */
 }
 
 void Handler::HandleReplicate(const message::Replicate &m,

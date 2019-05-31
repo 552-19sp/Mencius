@@ -9,6 +9,7 @@
 
 #include <string>
 
+#include "AMOStore.hpp"
 #include "Channel.hpp"
 #include "Replicate.hpp"
 #include "ReplicateAck.hpp"
@@ -17,7 +18,7 @@
 
 class Handler {
  public:
-  explicit Handler(Channel &channel);
+  explicit Handler(Channel &channel, KVStore::AMOStore *app);
 
   void Handle(const std::string &data,
     TCPConnection::pointer connection);
@@ -45,6 +46,8 @@ class Handler {
     TCPConnection::pointer connection);
 
   Channel &channel_;
+
+  KVStore::AMOStore *app_;
 };
 
 #endif  // INCLUDE_HANDLER_HPP_

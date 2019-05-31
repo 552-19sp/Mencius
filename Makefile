@@ -56,7 +56,7 @@ $(OBJDIR) $(BINDIR):
 	mkdir -p $@ obj/client obj/server obj/KVStore
 
 cpplint:
-	cpplint --filter=-runtime/references,-build/c++11 --recursive */*
+	cpplint --filter=-runtime/references,-build/c++11 $(shell find . -name \*.h?? -or -name \*.cpp | grep -vE "^\.\/benchmark\/")
 
 .PHONY: clean
 clean:

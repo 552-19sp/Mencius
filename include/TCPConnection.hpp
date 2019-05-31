@@ -12,7 +12,6 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "AMOStore.hpp"
 #include "Replicate.hpp"
 #include "ReplicateAck.hpp"
 #include "Request.hpp"
@@ -30,8 +29,7 @@ class TCPConnection
 
   static pointer Create(Channel &channel,
     Handler &handler,
-    boost::asio::io_context &io_context,
-    KVStore::AMOStore *app);
+    boost::asio::io_context &io_context);
 
   ~TCPConnection();
 
@@ -46,8 +44,7 @@ class TCPConnection
  private:
   explicit TCPConnection(Channel &channel,
     Handler &handler,
-    boost::asio::io_context &io_context,
-    KVStore::AMOStore *app);
+    boost::asio::io_context &io_context);
 
   void Stop();
   bool Stopped() const;
@@ -72,8 +69,6 @@ class TCPConnection
   boost::asio::streambuf input_buffer_;
   std::deque<std::string> output_queue_;
   boost::asio::steady_timer non_empty_output_queue_;
-
-  KVStore::AMOStore *app_;
 };
 
 #endif  // INCLUDE_TCPCONNECTION_HPP_

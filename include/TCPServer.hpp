@@ -45,10 +45,11 @@ class TCPServer {
   std::string name_;
   tcp::acceptor acceptor_;
   tcp::resolver resolver_;
-  Channel channel_;
-  Handler handler_;
 
   KVStore::AMOStore *app_;
+
+  Channel channel_;
+  Handler handler_;
 
   int num_servers_;
 };
