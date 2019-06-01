@@ -7,6 +7,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "ServerAccept.hpp"
+#include "Response.hpp"
 #include "Utilities.hpp"
 
 const char kConfigFilePath[] = "config";
@@ -19,7 +20,6 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
       acceptor_(io_context, tcp::endpoint(tcp::v4(), std::stoi(port))),
       resolver_(io_context),
       app_(new KVStore::AMOStore()),
-      handler_(channel_, app_),
       num_servers_(servers.size()) {
   std::cout << "max number of servers: " << num_servers_ << std::endl;
   // TODO(ljoswiak): This should repeat on a timer to reopen any
@@ -51,7 +51,7 @@ void TCPServer::StartConnect(const std::string &hostname,
     std::cout << "Trying to resolve " << endpoint_iter->endpoint() << std::endl;
 
     TCPConnection::pointer new_connection =
-      TCPConnection::Create(channel_, handler_, io_context_);
+      TCPConnection::Create(this, io_context_);
     new_connection->Socket().async_connect(endpoint_iter->endpoint(),
       boost::bind(&TCPServer::HandleServerConnect,
       this,
@@ -90,7 +90,7 @@ void TCPServer::HandleServerConnect(const boost::system::error_code &ec,
 
 void TCPServer::StartAccept() {
   TCPConnection::pointer new_connection =
-    TCPConnection::Create(channel_, handler_, io_context_);
+    TCPConnection::Create(this, io_context_);
 
   acceptor_.async_accept(new_connection->Socket(),
     boost::bind(&TCPServer::HandleAccept,
@@ -108,6 +108,95 @@ void TCPServer::HandleAccept(TCPConnection::pointer new_connection,
   }
 
   StartAccept();
+}
+
+void TCPServer::Disconnect(TCPConnection::pointer connection)  {
+  channel_.Remove(connection);
+}
+
+
+void TCPServer::Handle(
+    const std::string &data,
+    TCPConnection::pointer connection) {
+  auto m = message::Message::Decode(data);
+  auto type = m.GetMessageType();
+
+  switch (type) {
+    case message::MessageType::kServerSetup: {
+      auto server_accept = message::ServerAccept::Decode(m.GetEncodedMessage());
+      HandleServerAccept(server_accept, connection);
+      break;
+    }
+    case message::MessageType::kRequest: {
+      auto request = message::Request::Decode(m.GetEncodedMessage());
+      HandleRequest(request, connection);
+    }
+    case message::MessageType::kReplicate: {
+      auto replicate = message::Replicate::Decode(m.GetEncodedMessage());
+      HandleReplicate(replicate, connection);
+    }
+    case message::MessageType::kReplicateAck: {
+      auto replicate_ack = message::ReplicateAck::Decode(m.GetEncodedMessage());
+      HandleReplicateAck(replicate_ack, connection);
+    }
+    default: {
+      throw std::logic_error("unrecognized message type");
+    }
+  }
+}
+
+void TCPServer::Broadcast(const std::string &data) {
+  channel_.Deliver(data);
+  Handle(data, nullptr);
+}
+
+void TCPServer::Deliver(const std::string &data,
+    TCPConnection::pointer connection) {
+  if (connection == nullptr) {
+    Handle(data, nullptr);
+  } else {
+    connection->Deliver(data);
+  }
+}
+
+void TCPServer::HandleServerAccept(const message::ServerAccept &m,
+    TCPConnection::pointer connection) {
+  std::cout << "Received ServerAccept" << std::endl;
+  channel_.Add(connection);
+}
+
+void TCPServer::HandleRequest(const message::Request &m,
+    TCPConnection::pointer connection) {
+  // TODO(ljoswiak): Replicate before executing
+  std::cout << "Received request" << std::endl;
+  auto amo_response = app_->Execute(m.GetCommand());
+  auto response = message::Response(amo_response).Encode();
+  auto encoded =
+    message::Message(response, message::MessageType::kResponse).Encode();
+  Deliver(encoded, connection);
+  /*
+  auto replicate = message::Replicate(m.GetCommand());
+  auto message = message::Message(replicate.Encode(),
+    message::MessageType::kReplicate).Encode();
+  Broadcast(message);
+  */
+}
+
+void TCPServer::HandleReplicate(const message::Replicate &m,
+    TCPConnection::pointer connection) {
+  std::cout << "Received replicate" << std::endl;
+  auto ack = message::ReplicateAck().Encode();
+  auto message =
+    message::Message(ack, message::MessageType::kReplicateAck).Encode();
+
+  // Send response only to the server we received
+  // the replicate message from.
+  Deliver(message, connection);
+}
+
+void TCPServer::HandleReplicateAck(const message::ReplicateAck &m,
+    TCPConnection::pointer connection) {
+  std::cout << "Received replicate ack" << std::endl;
 }
 
 int main(int argc, char* argv[]) {

@@ -7,16 +7,15 @@
 
 #include "AMOResponse.hpp"
 #include "Channel.hpp"
-#include "Handler.hpp"
 #include "Message.hpp"
 #include "KVStore.hpp"
 #include "Response.hpp"
+#include "TCPServer.hpp"
 
 TCPConnection::pointer TCPConnection::Create(
-    Channel &channel,
-    Handler &handler,
+    TCPServer *server,
     boost::asio::io_context &io_context) {
-  return pointer(new TCPConnection(channel, handler, io_context));
+  return pointer(new TCPConnection(server, io_context));
 }
 
 void TCPConnection::Start() {
@@ -27,11 +26,10 @@ void TCPConnection::Start() {
   AwaitOutput();
 }
 
-TCPConnection::TCPConnection(Channel &channel,
-    Handler &handler,
+TCPConnection::TCPConnection(
+    TCPServer *server,
     boost::asio::io_context &io_context)
-    : channel_(channel),
-      handler_(handler),
+    : server_(server),
       socket_(io_context),
       non_empty_output_queue_(io_context) {
   // Set timer to max value when queue is empty.
@@ -44,7 +42,8 @@ TCPConnection::~TCPConnection() {
 
 void TCPConnection::Stop() {
   std::cout << "Closing connection" << std::endl;
-  channel_.Remove(shared_from_this());
+  server_->Disconnect(shared_from_this());
+
   socket_.close();
   non_empty_output_queue_.cancel();
 }
@@ -119,7 +118,8 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
     std::istream is(&input_buffer_);
     std::getline(is, data);
 
-    handler_.Handle(data, shared_from_this());
+    const std::string const_data = std::string(data);
+    server_->Handle(const_data, shared_from_this());
 
     StartRead();
   } else {

@@ -13,8 +13,10 @@
 
 #include "AMOStore.hpp"
 #include "Channel.hpp"
-#include "Handler.hpp"
 #include "Message.hpp"
+#include "Request.hpp"
+#include "Replicate.hpp"
+#include "ReplicateAck.hpp"
 #include "TCPConnection.hpp"
 
 using boost::asio::ip::tcp;
@@ -24,6 +26,32 @@ class TCPServer {
   TCPServer(boost::asio::io_context &io_context,
     std::string port,
     std::vector<std::tuple<std::string, std::string, std::string>> &servers);
+
+  void Disconnect(TCPConnection::pointer connection);
+
+  // Called by a TCPConnection instance when it receives a new message.
+  void Handle(const std::string &data, TCPConnection::pointer connection);
+
+  // Handles sending the message to all servers with open
+  // connections, as well as calling local handler to
+  // handle message on this server.
+  void Broadcast(const std::string &data);
+
+  // Handles delivery of message to a single server. If
+  // the server is this server, handles delivery by
+  // calling the appropriate handler, else delivers over
+  // the network.
+  void Deliver(const std::string &data,
+    TCPConnection::pointer connection);
+
+  void HandleServerAccept(const message::ServerAccept &m,
+    TCPConnection::pointer connection);
+  void HandleRequest(const message::Request &m,
+    TCPConnection::pointer connection);
+  void HandleReplicate(const message::Replicate &m,
+    TCPConnection::pointer connection);
+  void HandleReplicateAck(const message::ReplicateAck &m,
+    TCPConnection::pointer connection);
 
   // TODO(ljoswiak): Clean up app_ on object destruction
 
@@ -49,7 +77,6 @@ class TCPServer {
   KVStore::AMOStore *app_;
 
   Channel channel_;
-  Handler handler_;
 
   int num_servers_;
 };
