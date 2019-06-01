@@ -22,7 +22,7 @@ class ServerAccept {
 
   std::string Encode() const;
 
-  static ServerAccept Decode(const std::string data);
+  static ServerAccept Decode(const std::string &data);
 
  private:
   friend class boost::serialization::access;

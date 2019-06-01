@@ -107,7 +107,8 @@ void Client::HandleRead(const boost::system::error_code &ec) {
     std::getline(is, data);
 
     if (!data.empty()) {
-      auto m = message::Message::Decode(data);
+      const auto const_data = std::string(data);
+      auto m = message::Message::Decode(const_data);
       if (m.GetMessageType() == message::MessageType::kResponse) {
         auto response = message::Response::Decode(m.GetEncodedMessage());
 

@@ -8,7 +8,8 @@ static void PrintConnections(std::set<TCPConnection::pointer> connections) {
   std::cout << "Connections:" << std::endl;
   for (auto &c : connections) {
     std::cout << "  " << c->Socket().local_endpoint() << " / "
-      << c->Socket().remote_endpoint() << std::endl;
+      << c->Socket().remote_endpoint() << " ("
+      << c->GetServerName() << ")" << std::endl;
   }
 }
 

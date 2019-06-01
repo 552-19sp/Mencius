@@ -58,6 +58,9 @@ $(OBJDIR) $(BINDIR):
 cpplint:
 	cpplint --filter=-runtime/references,-build/c++11 $(shell find . -name \*.h?? -or -name \*.cpp | grep -vE "^\.\/benchmark\/")
 
+ctags:
+	ctags -R --exclude=benchmark .
+
 .PHONY: clean
 clean:
 	rm -rf $(OBJDIR) $(BINDIR)

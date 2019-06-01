@@ -24,7 +24,7 @@ class Request {
 
   std::string Encode() const;
 
-  static Request Decode(const std::string data);
+  static Request Decode(const std::string &data);
 
  private:
   friend class boost::serialization::access;

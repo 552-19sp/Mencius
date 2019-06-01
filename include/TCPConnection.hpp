@@ -12,8 +12,6 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "Replicate.hpp"
-#include "ReplicateAck.hpp"
 #include "Request.hpp"
 #include "ServerAccept.hpp"
 
@@ -29,12 +27,21 @@ class TCPConnection
 
   static pointer Create(
     TCPServer *server,
-    boost::asio::io_context &io_context);
+    boost::asio::io_context &io_context,
+    std::string server_name);
 
   ~TCPConnection();
 
   tcp::socket &Socket() {
     return socket_;
+  }
+
+  std::string GetServerName() const {
+    return server_name_;
+  }
+
+  void SetServerName(const std::string &server_name) {
+    server_name_ = server_name;
   }
 
   void Start();
@@ -44,7 +51,8 @@ class TCPConnection
  private:
   explicit TCPConnection(
     TCPServer *server,
-    boost::asio::io_context &io_context);
+    boost::asio::io_context &io_context,
+    std::string server_name);
 
   void Stop();
   bool Stopped() const;
@@ -56,18 +64,14 @@ class TCPConnection
   void StartRead();
   void HandleRead(const boost::system::error_code &ec);
 
-  /*
-  void HandleServerAccept(const message::ServerAccept &m);
-  void HandleRequest(const message::Request &m);
-  void HandleReplicate(const message::Replicate &m);
-  void HandleReplicateAck(const message::ReplicateAck &m);
-  */
-
   TCPServer *server_;
   tcp::socket socket_;
   boost::asio::streambuf input_buffer_;
   std::deque<std::string> output_queue_;
   boost::asio::steady_timer non_empty_output_queue_;
+
+  // Name of the server the TCP connection is connected to.
+  std::string server_name_;
 };
 
 #endif  // INCLUDE_TCPCONNECTION_HPP_

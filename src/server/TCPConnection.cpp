@@ -14,8 +14,9 @@
 
 TCPConnection::pointer TCPConnection::Create(
     TCPServer *server,
-    boost::asio::io_context &io_context) {
-  return pointer(new TCPConnection(server, io_context));
+    boost::asio::io_context &io_context,
+    std::string server_name) {
+  return pointer(new TCPConnection(server, io_context, server_name));
 }
 
 void TCPConnection::Start() {
@@ -28,10 +29,12 @@ void TCPConnection::Start() {
 
 TCPConnection::TCPConnection(
     TCPServer *server,
-    boost::asio::io_context &io_context)
+    boost::asio::io_context &io_context,
+    std::string server_name)
     : server_(server),
       socket_(io_context),
-      non_empty_output_queue_(io_context) {
+      non_empty_output_queue_(io_context),
+      server_name_(server_name) {
   // Set timer to max value when queue is empty.
   non_empty_output_queue_.expires_after(std::chrono::hours(9999));
 }

@@ -16,7 +16,7 @@ std::string Response::Encode() const {
   return archive_stream.str();
 }
 
-Response Response::Decode(const std::string data) {
+Response Response::Decode(const std::string &data) {
   Response m;
   std::istringstream archive_stream(data);
   boost::archive::text_iarchive archive(archive_stream);

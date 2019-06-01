@@ -5,13 +5,20 @@
 #ifndef INCLUDE_ROUND_HPP_
 #define INCLUDE_ROUND_HPP_
 
-/*
+#include <string>
+#include <unordered_map>
+
+#include "Accept.hpp"
+#include "AMOCommand.hpp"
+#include "TCPConnection.hpp"
+#include "TCPServer.hpp"
+
 class Round {
  public:
   Round();
 
   // Coordinator proposes a value.
-  // Suggest(? v);
+  void Suggest(const KVStore::AMOCommand v);
   // Coordinator proposes no-op.
   void Skip();
 
@@ -19,18 +26,20 @@ class Round {
   void Revoke();
 
  private:
+  TCPServer *server_;
+
   // Learner state.
-  // KVStore::AMOResponse learned_;
-  // ? learner_history_;
+  KVStore::AMOCommand learned_;
+  std::unordered_map<std::string, message::Accept> learner_history_;
 
   // Proposer state.
-  // ? prepared_history_;
+  std::unordered_map<std::string, message::PrepareAck>
+    prepared_history_;
 
   // Acceptor state.
-  // uint64_t prepared_ballot_;
-  // int64_t accepted_ballot_;
-  // ? accepted_value_;
-}
-*/
+  int prepared_ballot_;
+  int accepted_ballot_;
+  KVStore::AMOCommand accepted_value_;
+};
 
 #endif  // INCLUDE_ROUND_HPP_

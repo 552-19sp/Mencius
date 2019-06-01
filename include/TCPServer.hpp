@@ -11,12 +11,15 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
+#include "Accept.hpp"
 #include "AMOStore.hpp"
 #include "Channel.hpp"
+#include "Learn.hpp"
 #include "Message.hpp"
 #include "Request.hpp"
-#include "Replicate.hpp"
-#include "ReplicateAck.hpp"
+#include "Prepare.hpp"
+#include "PrepareAck.hpp"
+#include "Propose.hpp"
 #include "TCPConnection.hpp"
 
 using boost::asio::ip::tcp;
@@ -28,9 +31,6 @@ class TCPServer {
     std::vector<std::tuple<std::string, std::string, std::string>> &servers);
 
   void Disconnect(TCPConnection::pointer connection);
-
-  // Called by a TCPConnection instance when it receives a new message.
-  void Handle(const std::string &data, TCPConnection::pointer connection);
 
   // Handles sending the message to all servers with open
   // connections, as well as calling local handler to
@@ -44,13 +44,26 @@ class TCPServer {
   void Deliver(const std::string &data,
     TCPConnection::pointer connection);
 
+  // Called by a TCPConnection instance when it receives a new message.
+  void Handle(const std::string &data, TCPConnection::pointer connection);
+
+  // Used to establish initial handshake between servers.
   void HandleServerAccept(const message::ServerAccept &m,
     TCPConnection::pointer connection);
+
+  // Called when a request is received from a client.
   void HandleRequest(const message::Request &m,
     TCPConnection::pointer connection);
-  void HandleReplicate(const message::Replicate &m,
+
+  void Prepare(const message::Prepare &m,
     TCPConnection::pointer connection);
-  void HandleReplicateAck(const message::ReplicateAck &m,
+  void HandlePrepareAck(const message::PrepareAck &m,
+    TCPConnection::pointer connection);
+  void HandlePropose(const message::Propose &m,
+    TCPConnection::pointer connection);
+  void HandleAccept(const message::Accept &m,
+    TCPConnection::pointer connection);
+  void HandleLearn(const message::Learn &m,
     TCPConnection::pointer connection);
 
   // TODO(ljoswiak): Clean up app_ on object destruction
@@ -63,14 +76,14 @@ class TCPServer {
     std::string &server_name,
     tcp::resolver::iterator endpoint_iter);
 
+  // Methods to accept incoming connection requests.
   void StartAccept();
-
-  void HandleAccept(TCPConnection::pointer new_connection,
+  void HandleConnection(TCPConnection::pointer new_connection,
     const boost::system::error_code &error);
 
   boost::asio::io_context &io_context_;
   std::string port_;
-  std::string name_;
+  std::string server_name_;
   tcp::acceptor acceptor_;
   tcp::resolver resolver_;
 

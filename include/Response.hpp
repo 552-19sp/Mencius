@@ -24,7 +24,7 @@ class Response {
 
   std::string Encode() const;
 
-  static Response Decode(const std::string data);
+  static Response Decode(const std::string &data);
 
  private:
   friend class boost::serialization::access;

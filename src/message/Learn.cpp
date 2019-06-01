@@ -1,20 +1,26 @@
-// Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu
+// Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu.
 
-#include "ReplicateAck.hpp"
+#include "Learn.hpp"
 
 namespace message {
 
-ReplicateAck::ReplicateAck() {}
+Learn::Learn() {}
 
-std::string ReplicateAck::Encode() const {
+Learn::Learn(
+    int ballot_num,
+    KVStore::AMOCommand value)
+    : ballot_num_(ballot_num),
+      value_(value) {}
+
+std::string Learn::Encode() const {
   std::ostringstream archive_stream;
   boost::archive::text_oarchive oa(archive_stream);
   oa << *this;
   return archive_stream.str();
 }
 
-ReplicateAck ReplicateAck::Decode(const std::string data) {
-  ReplicateAck m;
+Learn Learn::Decode(const std::string &data) {
+  Learn m;
   std::istringstream archive_stream(data);
   boost::archive::text_iarchive archive(archive_stream);
   archive >> m;

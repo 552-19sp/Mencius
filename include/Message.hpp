@@ -17,8 +17,11 @@ enum MessageType {
   kRequest,
   kResponse,
   kServerSetup,
-  kReplicate,
-  kReplicateAck
+  kPrepare,
+  kPrepareAck,
+  kPropose,
+  kAccept,
+  kLearn
 };
 
 class Message {
@@ -39,7 +42,7 @@ class Message {
   std::string Encode() const;
 
   // Deserialize the given string into a Message object.
-  static Message Decode(const std::string data);
+  static Message Decode(const std::string &data);
 
  private:
   friend class boost::serialization::access;
