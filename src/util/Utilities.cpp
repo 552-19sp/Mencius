@@ -55,12 +55,12 @@ std::vector<KVStore::AMOCommand> Utilities::ParseOperations(
       std::string action_str = op_parts[0];
       std::string key = op_parts[1];
       std::string value = "";
-      KVStore::Action action = KVStore::Action::GET;
+      KVStore::Action action = KVStore::Action::kGet;
 
       // TODO(jjohnson): Add support for other types of ops.
       if (action_str.compare("PUT") == 0) {
         value = op_parts[2];
-        action = KVStore::Action::PUT;
+        action = KVStore::Action::kPut;
       } else {
         return ops;
       }

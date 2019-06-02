@@ -79,7 +79,7 @@ void Client::HandleConnect(const boost::system::error_code &ec,
 
 void Client::ProcessWorkload() {
   for (auto &command : workload_) {
-    if (command.GetAction() == KVStore::Action::PUT) {
+    if (command.GetAction() == KVStore::Action::kPut) {
       StartWrite(command);
     } else {
       // TODO(jjohnson): handle other operation types here.
@@ -148,7 +148,7 @@ void Client::HandleWriteResult(const boost::system::error_code &ec,
 
   if (!ec) {
     // TODO(jjohnson): Write this to a shared output file.
-    std::cout << "Got response to write" << std::endl;
+    std::cout << "Successfully wrote message" << std::endl;
     /*
     write_timer_.expires_after(boost::asio::chrono::seconds(10));
     write_timer_.async_wait(boost::bind(&Client::StartWrite, this));

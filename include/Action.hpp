@@ -4,7 +4,12 @@
 #define INCLUDE_ACTION_HPP_
 
 namespace KVStore {
-enum Action { PUT, APPEND, GET };
+enum Action {
+  kPut,
+  kAppend,
+  kGet,
+  kNoOp
+};
 }  // namespace KVStore
 
 #endif  // INCLUDE_ACTION_HPP_

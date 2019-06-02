@@ -15,8 +15,11 @@ namespace KVStore {
 
 class AMOCommand {
  public:
-  AMOCommand() {}
+  // Create a no-op command.
+  AMOCommand();
   AMOCommand(int seq_num, std::string key, std::string value, Action action);
+  AMOCommand(const AMOCommand &command);
+  ~AMOCommand();
 
   bool operator< (const AMOCommand &r) const;
 

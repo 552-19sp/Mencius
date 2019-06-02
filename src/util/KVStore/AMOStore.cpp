@@ -27,13 +27,13 @@ AMOResponse AMOStore::Execute(const AMOCommand &command) {
   string s;
   if (!AlreadyExecuted(command)) {
     switch (command.GetAction()) {
-      case Action::PUT:
+      case Action::kPut:
         s = kv_store_.Put(command.GetKey(), command.GetValue());
         break;
-      case Action::APPEND:
+      case Action::kAppend:
         s = kv_store_.Append(command.GetKey(), command.GetValue());
         break;
-      case Action::GET:
+      case Action::kGet:
         s = kv_store_.Get(command.GetKey());
         break;
       default:

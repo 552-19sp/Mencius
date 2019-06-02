@@ -22,9 +22,7 @@ namespace message {
 class Accept {
  public:
   Accept();
-  explicit Accept(
-      int ballot_num,
-      KVStore::AMOCommand accepted_value);
+  Accept(int ballot_num, KVStore::AMOCommand accepted_value);
 
   int GetBallotNum() const {
     return ballot_num_;

@@ -20,7 +20,8 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
       acceptor_(io_context, tcp::endpoint(tcp::v4(), std::stoi(port))),
       resolver_(io_context),
       app_(new KVStore::AMOStore()),
-      num_servers_(servers.size()) {
+      num_servers_(servers.size()),
+      round_(new Round(this)) {
   std::cout << "max number of servers: " << num_servers_ << std::endl;
   // TODO(ljoswiak): This should repeat on a timer to reopen any
   // dropped connections.
@@ -119,16 +120,32 @@ void TCPServer::Handle(
     TCPConnection::pointer connection) {
   auto m = message::Message::Decode(data);
   auto type = m.GetMessageType();
+  auto encoded = m.GetEncodedMessage();
 
   switch (type) {
     case message::MessageType::kServerSetup: {
-      auto server_accept = message::ServerAccept::Decode(m.GetEncodedMessage());
+      auto server_accept = message::ServerAccept::Decode(encoded);
       HandleServerAccept(server_accept, connection);
       break;
     }
     case message::MessageType::kRequest: {
-      auto request = message::Request::Decode(m.GetEncodedMessage());
+      auto request = message::Request::Decode(encoded);
       HandleRequest(request, connection);
+      break;
+    }
+    case message::MessageType::kPropose: {
+      auto propose = message::Propose::Decode(encoded);
+      HandlePropose(propose, connection);
+      break;
+    }
+    case message::MessageType::kAccept: {
+      auto accept = message::Accept::Decode(encoded);
+      HandleAccept(accept, connection);
+      break;
+    }
+    case message::MessageType::kLearn: {
+      auto learn = message::Learn::Decode(encoded);
+      HandleLearn(learn, connection);
       break;
     }
     default: {
@@ -154,37 +171,49 @@ void TCPServer::Deliver(const std::string &data,
 void TCPServer::HandleServerAccept(const message::ServerAccept &m,
     TCPConnection::pointer connection) {
   std::cout << "Received ServerAccept" << std::endl;
+  connection->SetServerName(m.GetServerName());
   channel_.Add(connection);
 }
 
 void TCPServer::HandleRequest(const message::Request &m,
     TCPConnection::pointer connection) {
   std::cout << "Received request" << std::endl;
-  auto amo_response = app_->Execute(m.GetCommand());
-  auto response = message::Response(amo_response).Encode();
-  auto encoded =
-    message::Message(response, message::MessageType::kResponse).Encode();
-  Deliver(encoded, connection);
+  round_->Suggest(m.GetCommand());
 }
 
-void Prepare(const message::Prepare &m,
+void TCPServer::Prepare(const message::Prepare &m,
     TCPConnection::pointer connection) {
 }
 
-void HandlePrepareAck(const message::PrepareAck &m,
+void TCPServer::HandlePrepareAck(const message::PrepareAck &m,
     TCPConnection::pointer connection) {
 }
 
-void HandlePropose(const message::Propose &m,
+void TCPServer::HandlePropose(const message::Propose &m,
     TCPConnection::pointer connection) {
+  round_->HandlePropose(m, connection);
 }
 
-void TCPServer::HandleAccept(const message::Accept &m,
+void TCPServer::TCPServer::HandleAccept(const message::Accept &m,
     TCPConnection::pointer connection) {
+  round_->HandleAccept(m, connection);
 }
 
-void HandleLearn(const message::Learn &m,
+void TCPServer::HandleLearn(const message::Learn &m,
     TCPConnection::pointer connection) {
+  round_->HandleLearn(m, connection);
+}
+
+std::string TCPServer::GetServerName() const {
+  return server_name_;
+}
+
+std::string TCPServer::GetServerName(TCPConnection::pointer connection) const {
+  if (connection) {
+    return connection->GetServerName();
+  } else {
+    return GetServerName();
+  }
 }
 
 int main(int argc, char* argv[]) {

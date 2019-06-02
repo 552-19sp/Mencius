@@ -20,6 +20,7 @@
 #include "Prepare.hpp"
 #include "PrepareAck.hpp"
 #include "Propose.hpp"
+#include "Round.hpp"
 #include "TCPConnection.hpp"
 
 using boost::asio::ip::tcp;
@@ -29,6 +30,12 @@ class TCPServer {
   TCPServer(boost::asio::io_context &io_context,
     std::string port,
     std::vector<std::tuple<std::string, std::string, std::string>> &servers);
+
+  std::string GetServerName() const;
+  std::string GetServerName(TCPConnection::pointer connection) const;
+  int GetNumServers() const {
+    return num_servers_;
+  }
 
   void Disconnect(TCPConnection::pointer connection);
 
@@ -92,6 +99,9 @@ class TCPServer {
   Channel channel_;
 
   int num_servers_;
+
+  // TODO(ljoswiak): Update to store multiple rounds
+  Round *round_;
 };
 
 #endif  // INCLUDE_TCPSERVER_HPP_
