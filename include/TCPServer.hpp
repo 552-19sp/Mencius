@@ -81,6 +81,9 @@ class TCPServer {
   void HandleDropRate(const message::DropRate &m,
     TCPConnection::pointer connection);
 
+  // When receiving a proposal for instance i, skip all
+  // unused instances prior to i this server owns.
+  void OnSuggestion(int instance);
   void OnLearned(int instance, KVStore::AMOCommand &value);
 
   // TODO(ljoswiak): Clean up app_ on object destruction

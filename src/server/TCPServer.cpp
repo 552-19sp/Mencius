@@ -246,12 +246,31 @@ std::string TCPServer::Owner(int instance) {
   return std::get<2>(server_addresses[index]);
 }
 
+void TCPServer::OnSuggestion(int instance) {
+  std::cout << "OnSuggestion, instance = " << instance << std::endl;
+
+  for (int i = index_; i < instance; i += num_servers_) {
+    std::cout << "  sending skip for instance " << i << std::endl;
+    auto round = GetRound(i);
+    round->Skip();
+
+    index_ += num_servers_;
+  }
+}
+
 void TCPServer::CheckCommit() {
+  std::cout << "CheckCommit. expected = " << expected_ << std::endl;
   while (rounds_.find(expected_) != rounds_.end()) {
+    std::cout << "  expected: " << expected_ << std::endl;
     auto learned = rounds_[expected_]->GetLearnedValue();
+    if (!learned) {
+      break;
+    }
+
+    std::cout << "  action: " << learned->GetAction() << std::endl;
     if (learned->GetAction() != KVStore::Action::kNoOp) {
       // Value is committed. Execute and return to client.
-      std::cout << "Committing value for round " << expected_ << std::endl;
+      std::cout << "  committing value for instance " << expected_ << std::endl;
 
       auto amo_response = app_->Execute(*learned);
       auto client_connection = clients_[expected_];
@@ -264,14 +283,17 @@ void TCPServer::CheckCommit() {
             message::MessageType::kResponse).Encode();
         Deliver(encoded, client_connection);
       }
+    } else {
+      std::cout << "  committing no-op for instance " << expected_ << std::endl;
     }
 
     expected_++;
   }
+  std::cout << "  end of CheckCommit. expected = " << expected_ << std::endl;
 }
 
 void TCPServer::OnLearned(int instance, KVStore::AMOCommand &value) {
-  std::cout << "CheckCommit, instance = " << instance << std::endl;
+  std::cout << "OnLearned, instance = " << instance << std::endl;
 
   auto instance_owner = Owner(instance);
   auto proposed_command = proposed_[instance];

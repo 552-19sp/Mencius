@@ -48,12 +48,13 @@ void Round::HandlePropose(const message::Propose &m,
 
   if (ballot_num == 0 && value.GetAction() == KVStore::Action::kNoOp) {
     // Learn no-op.
+    std::cout << "  learning no-op" << std::endl;
     learned_ = std::make_shared<KVStore::AMOCommand>();
-    // TODO(ljoswiak): Implement and call OnLearned
+    server_->OnLearned(instance_, *learned_);
   } else if (prepared_ballot_ <= ballot_num && accepted_ballot_ < ballot_num) {
     // Accept the ballot.
     if (ballot_num == 0) {
-      // TODO(ljoswiak): Implement and call OnSuggestion
+      server_->OnSuggestion(instance_);
     }
 
     accepted_ballot_ = ballot_num;
