@@ -20,12 +20,13 @@ NO_DROP_RATE = 0
 CLIENT_EXE = "../bin/client"
 
 
-def run_background_clients(num_clients, num_servers, drop_rate):
+def run_background_clients(num_clients, num_servers, drop_rate, failure_code):
     """ Runs extra clients, does not wait for them to exit. """
     for _ in range(num_clients):
         joined_ops = ','.join([CMD] * NUM_CLIENT_OPS)
         CLIENT_PROCS.append(subprocess.Popen(
-            (CLIENT_EXE, str(num_servers), str(drop_rate), joined_ops), stdout=subprocess.PIPE))
+            (CLIENT_EXE, str(num_servers), str(failure_code), str(drop_rate), joined_ops),
+            stdout=subprocess.PIPE))
 
 
 def run_benchmark_client(num_servers, drop_rate, failure_code):
@@ -38,12 +39,12 @@ def run_benchmark_client(num_servers, drop_rate, failure_code):
 
 def run_benchmark(num_clients, num_servers, drop_rate, random_failures, writer):
     """ Runs a no failure benchmark with the specified parameters. """
-    # Setup background clients, if any.
-    num_background_clients = num_clients - 1
-    run_background_clients(num_background_clients, num_servers, drop_rate)
-
     # Encode if random server failures should be allowed.
     failure_code = RANDOM_FAILURE_CODE if random_failures else NO_FAILURE_CODE
+
+    # Setup background clients, if any.
+    num_background_clients = num_clients - 1
+    run_background_clients(num_background_clients, num_servers, drop_rate, failure_code)
 
     # Time benchmarking client.
     start = time.time()
