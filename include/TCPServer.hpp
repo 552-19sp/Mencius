@@ -15,7 +15,6 @@
 #include "Accept.hpp"
 #include "AMOStore.hpp"
 #include "Channel.hpp"
-#include "DropRate.hpp"
 #include "Learn.hpp"
 #include "Message.hpp"
 #include "Request.hpp"
@@ -37,10 +36,6 @@ class TCPServer {
   std::string GetServerName(TCPConnection::pointer connection) const;
   int GetNumServers() const {
     return num_servers_;
-  }
-
-  int GetDropRate() const {
-    return drop_rate_;
   }
 
   void Disconnect(TCPConnection::pointer connection);
@@ -78,8 +73,7 @@ class TCPServer {
     TCPConnection::pointer connection);
   void HandleLearn(const message::Learn &m,
     TCPConnection::pointer connection);
-  void HandleDropRate(const message::DropRate &m,
-    TCPConnection::pointer connection);
+  void HandleKillServer();
 
   // When receiving a proposal for instance i, skip all
   // unused instances prior to i this server owns.
@@ -118,7 +112,6 @@ class TCPServer {
   Channel channel_;
 
   int num_servers_;
-  int drop_rate_;
 
   // Mencius state.
   std::unordered_map<int, TCPConnection::pointer> clients_;

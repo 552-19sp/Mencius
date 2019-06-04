@@ -2,12 +2,18 @@
 
 #include "Client.hpp"
 
+#include <chrono>
+#include <thread>
+
 #include <boost/bind.hpp>
+#include <boost/chrono.hpp>
+#include <boost/thread.hpp>
 
 #include "Action.hpp"
 #include "AMOCommand.hpp"
 #include "AMOResponse.hpp"
 #include "DropRate.hpp"
+#include "KillServer.hpp"
 #include "Message.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
@@ -19,10 +25,16 @@ const char kThreeReplicaAddr[] = "35.171.129.43";
 const char kFiveReplicaAddr[] = "35.171.129.43";
 const char kReplicaPort[] = "11111";
 
-Client::Client(boost::asio::io_context &io_context, int drop_rate,
+// Max elapsed time between killing two nodes in ms.
+const int kMaxTimeBetweenKill = 2000;
+
+Client::Client(boost::asio::io_context &io_context, int num_servers,
+    int drop_rate,  bool kill_servers,
     const std::vector<KVStore::AMOCommand> &workload)
     : stopped_(false),
+      num_servers_(num_servers),
       server_drop_rate_(drop_rate),
+      kill_servers_randomly_(kill_servers),
       socket_(io_context),
       workload_(workload),
       read_timer_(io_context),
@@ -85,6 +97,13 @@ void Client::HandleConnect(const boost::system::error_code &ec,
     std::cout << "Connected to " << endpoint_iter->endpoint() << std::endl;
     StartRead();
     SetServerDropRate();
+
+    if (kill_servers_randomly_ && !assasin_thread_) {
+      int max_failures = (num_servers_ - 1) / 2;
+      assasin_thread_ = new std::thread(&Client::KillServersRandomly,
+          this, max_failures);
+    }
+
     ProcessWorkload();
   }
 }
@@ -92,6 +111,10 @@ void Client::HandleConnect(const boost::system::error_code &ec,
 void Client::ProcessWorkload() {
   if (workload_.size() == 0) {
     std::cout << "no workload" << std::endl;
+    if (assasin_thread_) {
+      assasin_thread_->join();
+      delete assasin_thread_;
+    }
     exit(EXIT_SUCCESS);
   }
   auto command = workload_.back();
@@ -131,6 +154,10 @@ void Client::HandleRead(const boost::system::error_code &ec) {
         // Keep executing any remaining workload, exit if finished.
         if (workload_.size() == 0) {
           std::cout << "finished workload" << std::endl;
+          if (assasin_thread_) {
+            assasin_thread_->join();
+            delete assasin_thread_;
+          }
           exit(EXIT_SUCCESS);
         }
         auto command = workload_.back();
@@ -189,6 +216,22 @@ void Client::SetServerDropRate() {
       boost::bind(&Client::HandleWriteResult, this, _1));
 }
 
+void Client::KillServersRandomly(int max_failures) {
+  auto request = message::KillServer();
+  auto encoded = message::Message(request.Encode(),
+      message::MessageType::kKillServer).Encode();
+  unsigned int seed = 0;
+
+  for (int i = 0; i < max_failures; i++) {
+    int sleep_ms = rand_r(&seed) % kMaxTimeBetweenKill + 1;
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+    std::cout << "sending kill server message" << std::endl;
+    boost::asio::async_write(socket_,
+        boost::asio::buffer(encoded),
+        boost::bind(&Client::HandleWriteResult, this, _1));
+  }
+}
+
 void Client::CheckDeadline() {
   if (stopped_) {
     return;
@@ -206,19 +249,20 @@ void Client::CheckDeadline() {
 }
 
 int main(int argc, char **argv) {
-  if (argc != 4) {
+  if (argc != 5) {
     std::cerr << "Usage: client <number-of-servers> " <<
-      " <server-drop-rate> <operations>" << std::endl;
+      " <server-drop-rate> <random-failure-bit> <operations>" << std::endl;
     return 1;
   }
 
   int num_servers = atoi(argv[1]);
   int server_drop_rate = atoi(argv[2]);
-  auto workload = Utilities::ParseOperations(argv[3]);
+  bool kill_servers = atoi(argv[3]) == 1;
+  auto workload = Utilities::ParseOperations(argv[4]);
 
   boost::asio::io_context io_context;
   tcp::resolver r(io_context);
-  Client c(io_context, server_drop_rate, workload);
+  Client c(io_context, num_servers, server_drop_rate, kill_servers, workload);
 
   if (num_servers == 3) {
     c.Start(r.resolve(tcp::resolver::query(kThreeReplicaAddr, kReplicaPort)));

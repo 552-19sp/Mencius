@@ -11,11 +11,11 @@ NUM_CLIENT_OPS = 1000 # Number of background client ops.
 
 CMD = "GET A"
 CLIENT_PROCS = []
-MAX_TIME = 10
 
 NO_FAILURE_CODE = 0
-GRADUAL_FAILURE_CODE = 1
-INSTANT_FAILURE_CODE = 2
+RANDOM_FAILURE_CODE = 1
+
+NO_DROP_RATE = 0
 
 CLIENT_EXE = "../bin/client"
 
@@ -28,40 +28,48 @@ def run_background_clients(num_clients, num_servers, drop_rate):
             (CLIENT_EXE, str(num_servers), str(drop_rate), joined_ops), stdout=subprocess.PIPE))
 
 
-def run_benchmark_client(num_servers, drop_rate):
+def run_benchmark_client(num_servers, drop_rate, failure_code):
     """ Runs a new benchmark client as a subprocess. """
     joined_ops = ','.join([CMD] * NUM_BENCH_OPS)
     subprocess.call(
-        [CLIENT_EXE, str(num_servers), str(drop_rate), joined_ops], stdout=subprocess.PIPE)
+        [CLIENT_EXE, str(num_servers), str(drop_rate), str(failure_code), joined_ops],
+        stdout=subprocess.PIPE)
 
 
-def run_no_failure_benchmark(num_clients, num_servers, drop_rate, writer):
+def run_benchmark(num_clients, num_servers, drop_rate, random_failures, writer):
     """ Runs a no failure benchmark with the specified parameters. """
     # Setup background clients, if any.
     num_background_clients = num_clients - 1
     run_background_clients(num_background_clients, num_servers, drop_rate)
 
+    # Encode if random server failures should be allowed.
+    failure_code = RANDOM_FAILURE_CODE if random_failures else NO_FAILURE_CODE
+
     # Time benchmarking client.
     start = time.time()
-    run_benchmark_client(num_servers, drop_rate)
+    run_benchmark_client(num_servers, drop_rate, failure_code)
+    end = time.time()
 
     # Kill background clients, if any.
     for proc in CLIENT_PROCS:
         if proc.poll() is None:
             proc.kill()
 
-    end = time.time()
     avg_latency = round((end - start) * 1000 / NUM_BENCH_OPS)
-    print("no failures/{} clients/{} servers/{} drop rate: {} ms".format(
-        num_clients, num_servers, drop_rate, avg_latency))
-    writer.writerow([NO_FAILURE_CODE, num_clients, num_servers, drop_rate, avg_latency])
+    print("random failures: {}/{} clients/{} servers/{} drop rate: {} ms".format(
+        failure_code, num_clients, num_servers, drop_rate, avg_latency))
+    writer.writerow([failure_code, num_clients, num_servers, drop_rate, avg_latency])
+
 
 def run_tcp_mencius_benchmarks(writer):
     """ Runs all the benchmarks for TCP Mencius. """
     writer.writerow(['Mencius', 'TCP'])
     for num_clients in NUM_CLIENTS:
         for num_servers in NUM_SERVERS:
-            run_no_failure_benchmark(num_clients, num_servers, 0, writer)
+            run_benchmark(num_clients, num_servers, NO_DROP_RATE, False, writer)
+    for num_clients in NUM_CLIENTS:
+        for num_servers in NUM_SERVERS:
+            run_benchmark(num_clients, num_servers, NO_DROP_RATE, True, writer)
 
 def run_benchmark_suite(writer):
     """ Run all benchmarks. """

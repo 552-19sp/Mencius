@@ -21,7 +21,6 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
       resolver_(io_context),
       app_(new KVStore::AMOStore()),
       num_servers_(servers.size()),
-      drop_rate_(0),
       expected_(0) {
   std::cout << "max number of servers: " << num_servers_ << std::endl;
   // TODO(ljoswiak): This should repeat on a timer to reopen any
@@ -155,8 +154,10 @@ void TCPServer::Handle(
       break;
     }
     case message::MessageType::kDropRate: {
-      auto drop_rate = message::DropRate::Decode(encoded);
-      HandleDropRate(drop_rate, connection);
+      break;  // No need to set drop rate for TCPServer.
+    }
+    case message::MessageType::kKillServer: {
+      HandleKillServer();
       break;
     }
     default: {
@@ -304,10 +305,8 @@ void TCPServer::OnLearned(int instance, KVStore::AMOCommand &value) {
   CheckCommit();
 }
 
-void TCPServer::HandleDropRate(const message::DropRate &m,
-    TCPConnection::pointer connection) {
-  drop_rate_ = m.GetDropRate();
-}
+// TODO(jjohnson): Figure out how to kill a TCP server.
+void TCPServer::HandleKillServer() {}
 
 std::string TCPServer::GetServerName() const {
   return server_name_;

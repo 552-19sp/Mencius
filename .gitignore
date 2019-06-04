@@ -40,8 +40,6 @@ bin/
 tags
 
 # Benchmarking Library and Executables
-benchmark/benchmark
-benchmark/build
-benchmark/benchmarks
+benchmark/*.csv
 
 .DS_Store

@@ -122,13 +122,7 @@ void TCPConnection::HandleRead(const boost::system::error_code &ec) {
     std::getline(is, data);
 
     const std::string const_data = std::string(data);
-
-    unsigned int seed = 0;
-    bool drop_message = rand_r(&seed) % 1000 + 1 <= server_->GetDropRate();
-    if (!drop_message) {
-      server_->Handle(const_data, shared_from_this());
-    }
-
+    server_->Handle(const_data, shared_from_this());
     StartRead();
   } else {
     std::cerr << "Error on read: " << ec.message() << std::endl;
