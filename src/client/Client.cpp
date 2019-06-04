@@ -20,13 +20,15 @@ const char kFiveReplicaAddr[] = "35.171.129.43";
 const char kReplicaPort[] = "11111";
 
 Client::Client(boost::asio::io_context &io_context, int drop_rate,
-  const std::vector<KVStore::AMOCommand> &workload)
-  : stopped_(false),
-    server_drop_rate_(drop_rate),
-    socket_(io_context),
-    workload_(workload),
-    read_timer_(io_context),
-    write_timer_(io_context) {
+    const std::vector<KVStore::AMOCommand> &workload)
+    : stopped_(false),
+      server_drop_rate_(drop_rate),
+      socket_(io_context),
+      workload_(workload),
+      read_timer_(io_context),
+      write_timer_(io_context) {
+  // Reverse workload (client reads starting from the end).
+  std::reverse(workload_.begin(), workload_.end());
 }
 
 void Client::Start(tcp::resolver::iterator endpoint_iter) {
@@ -122,7 +124,9 @@ void Client::HandleRead(const boost::system::error_code &ec) {
       if (m.GetMessageType() == message::MessageType::kResponse) {
         auto response = message::Response::Decode(m.GetEncodedMessage());
         auto value = response.GetResponse().GetValue();
-        std::cout << "Received reply. Value: " << value << std::endl;
+        std::cout << "Received reply. Original command: "
+            << response.GetResponse().GetCommand() << std::endl;
+        std::cout << " Value: " << value << std::endl;
 
         // Keep executing any remaining workload, exit if finished.
         if (workload_.size() == 0) {
