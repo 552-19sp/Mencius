@@ -29,11 +29,18 @@ AMOCommand::AMOCommand(const AMOCommand &command) {
 }
 
 AMOCommand::~AMOCommand() {
-  std::cout << "AMOCommand destructor called" << std::endl;
+  // std::cout << "AMOCommand destructor called" << std::endl;
 }
 
 bool AMOCommand::operator< (const AMOCommand &r) const {
   return this->seq_num_ < r.seq_num_;
+}
+
+bool AMOCommand::operator== (const AMOCommand &r) const {
+  return this->seq_num_ == r.seq_num_ &&
+      this->key_.compare(r.key_) == 0 &&
+      this->value_.compare(r.value_) == 0 &&
+      this->action_ == r.action_;
 }
 
 int AMOCommand::GetSeqNum() const {

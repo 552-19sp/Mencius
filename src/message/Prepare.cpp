@@ -6,8 +6,9 @@ namespace message {
 
 Prepare::Prepare() {}
 
-Prepare::Prepare(int ballot_num)
-    : ballot_num_(ballot_num) {}
+Prepare::Prepare(int instance, int ballot_num)
+    : instance_(instance),
+      ballot_num_(ballot_num) {}
 
 std::string Prepare::Encode() const {
   std::ostringstream archive_stream;

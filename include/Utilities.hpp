@@ -16,7 +16,7 @@ class Utilities {
 
  public:
   static std::vector<std::tuple<std::string,
-    std::string, std::string>> ReadConfig(const std::string &config_path);
+      std::string, std::string>> ReadConfig(const std::string &config_path);
 
   // Given a string of comma separated operations,
   // parses the operations and returns each operation

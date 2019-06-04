@@ -20,7 +20,11 @@ class TCPServer;
 
 class Round {
  public:
-  explicit Round(TCPServer *server);
+  explicit Round(TCPServer *server, int instance);
+
+  std::shared_ptr<KVStore::AMOCommand> GetLearnedValue() const {
+    return learned_;
+  }
 
   // Coordinator proposes a value.
   void Suggest(const KVStore::AMOCommand &command);
@@ -40,13 +44,15 @@ class Round {
  private:
   TCPServer *server_;
 
+  int instance_;
+
   // Learner state.
-  std::unique_ptr<KVStore::AMOCommand> learned_;
+  std::shared_ptr<KVStore::AMOCommand> learned_;
   std::unordered_map<std::string, message::Accept> learner_history_;
 
   // Proposer state.
   std::unordered_map<std::string, message::PrepareAck>
-    prepared_history_;
+      prepared_history_;
 
   // Acceptor state.
   int prepared_ballot_;

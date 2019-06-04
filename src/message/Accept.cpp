@@ -7,9 +7,11 @@ namespace message {
 Accept::Accept() {}
 
 Accept::Accept(
+    int instance,
     int ballot_num,
     KVStore::AMOCommand accepted_value)
-    : ballot_num_(ballot_num),
+    : instance_(instance),
+      ballot_num_(ballot_num),
       accepted_value_(accepted_value) {}
 
 std::string Accept::Encode() const {

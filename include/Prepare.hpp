@@ -14,7 +14,11 @@ namespace message {
 class Prepare {
  public:
   Prepare();
-  explicit Prepare(int ballot_num);
+  explicit Prepare(int instance, int ballot_num);
+
+  int GetInstance() const {
+    return instance_;
+  }
 
   int GetBallotNum() const {
     return ballot_num_;
@@ -29,9 +33,11 @@ class Prepare {
 
   template<class Archive> void serialize(Archive &ar,
       unsigned int _ /* version */) {
+    ar & instance_;
     ar & ballot_num_;
   }
 
+  int instance_;
   int ballot_num_;
 };
 

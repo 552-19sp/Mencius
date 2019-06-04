@@ -7,9 +7,11 @@ namespace message {
 Propose::Propose() {}
 
 Propose::Propose(
+    int instance,
     int ballot_num,
     KVStore::AMOCommand value)
-    : ballot_num_(ballot_num),
+    : instance_(instance),
+      ballot_num_(ballot_num),
       value_(value) {}
 
 std::string Propose::Encode() const {

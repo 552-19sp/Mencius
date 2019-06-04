@@ -23,8 +23,13 @@ class Propose {
  public:
   Propose();
   explicit Propose(
+      int instance,
       int ballot_num,
       KVStore::AMOCommand value);
+
+  int GetInstance() const {
+    return instance_;
+  }
 
   int GetBallotNum() const {
     return ballot_num_;
@@ -43,10 +48,12 @@ class Propose {
 
   template<class Archive> void serialize(Archive &ar,
       unsigned int _ /* version */) {
+    ar & instance_;
     ar & ballot_num_;
     ar & value_;
   }
 
+  int instance_;
   int ballot_num_;
   KVStore::AMOCommand value_;
 };

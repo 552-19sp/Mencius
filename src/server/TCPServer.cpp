@@ -22,11 +22,12 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
       app_(new KVStore::AMOStore()),
       num_servers_(servers.size()),
       drop_rate_(0),
-      round_(new Round(this)) {
+      expected_(0) {
   std::cout << "max number of servers: " << num_servers_ << std::endl;
   // TODO(ljoswiak): This should repeat on a timer to reopen any
   // dropped connections.
   // Open connections with other servers.
+  int counter = 0;
   for (const auto &address : servers) {
     auto other_port = std::get<1>(address);
     // Don't try to open connection to self.
@@ -35,8 +36,12 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
       std::string server_name = std::get<2>(address);
       StartConnect(hostname, server_name);
     } else {
+      index_ = counter;
       server_name_ = std::get<2>(address);
+
+      std::cout << server_name_ << " starting index: " << index_ << std::endl;
     }
+    counter++;
   }
 
   StartAccept();
@@ -183,8 +188,30 @@ void TCPServer::HandleServerAccept(const message::ServerAccept &m,
 
 void TCPServer::HandleRequest(const message::Request &m,
     TCPConnection::pointer connection) {
-  std::cout << "Received request" << std::endl;
-  round_->Suggest(m.GetCommand());
+  std::cout << "Received request, index = " << index_ << std::endl;
+
+  if (proposed_.find(index_) == proposed_.end()) {
+    // Create a new Round instance.
+    auto r = std::make_shared<Round>(this, index_);
+    auto command = m.GetCommand();
+
+    clients_[index_] = connection;
+    rounds_[index_] = r;
+    proposed_[index_] = command;
+
+    std::cout << "Suggesting command for instance "
+        << index_ << std::endl;
+    r->Suggest(command);
+
+    index_ += num_servers_;
+  }
+}
+
+std::shared_ptr<Round> TCPServer::GetRound(int instance) {
+  if (!rounds_[instance]) {
+    rounds_[instance] = std::make_shared<Round>(this, instance);
+  }
+  return rounds_[instance];
 }
 
 void TCPServer::Prepare(const message::Prepare &m,
@@ -197,17 +224,63 @@ void TCPServer::HandlePrepareAck(const message::PrepareAck &m,
 
 void TCPServer::HandlePropose(const message::Propose &m,
     TCPConnection::pointer connection) {
-  round_->HandlePropose(m, connection);
+  auto round = GetRound(m.GetInstance());
+  round->HandlePropose(m, connection);
 }
 
 void TCPServer::TCPServer::HandleAccept(const message::Accept &m,
     TCPConnection::pointer connection) {
-  round_->HandleAccept(m, connection);
+  auto round = GetRound(m.GetInstance());
+  round->HandleAccept(m, connection);
 }
 
 void TCPServer::HandleLearn(const message::Learn &m,
     TCPConnection::pointer connection) {
-  round_->HandleLearn(m, connection);
+  auto round = GetRound(m.GetInstance());
+  round->HandleLearn(m, connection);
+}
+
+std::string TCPServer::Owner(int instance) {
+  auto server_addresses = Utilities::ReadConfig(kConfigFilePath);
+  int index = instance % num_servers_;
+  return std::get<2>(server_addresses[index]);
+}
+
+void TCPServer::CheckCommit() {
+  while (rounds_.find(expected_) != rounds_.end()) {
+    auto learned = rounds_[expected_]->GetLearnedValue();
+    if (learned->GetAction() != KVStore::Action::kNoOp) {
+      // Value is committed. Execute and return to client.
+      std::cout << "Committing value for round " << expected_ << std::endl;
+
+      auto amo_response = app_->Execute(*learned);
+      auto client_connection = clients_[expected_];
+      if  (client_connection) {
+        // If client connection is null, this value is being
+        // learned on a server that did not receive the request,
+        // so no need to send a reply.
+        auto response = message::Response(amo_response).Encode();
+        auto encoded = message::Message(response,
+            message::MessageType::kResponse).Encode();
+        Deliver(encoded, client_connection);
+      }
+    }
+
+    expected_++;
+  }
+}
+
+void TCPServer::OnLearned(int instance, KVStore::AMOCommand &value) {
+  std::cout << "CheckCommit, instance = " << instance << std::endl;
+
+  auto instance_owner = Owner(instance);
+  auto proposed_command = proposed_[instance];
+  if (instance_owner.compare(server_name_) != 0 &&
+      proposed_[instance] == value) {
+    // TODO(ljoswiak): Propose value in proposed_[instance]
+  }
+
+  CheckCommit();
 }
 
 void TCPServer::HandleDropRate(const message::DropRate &m,

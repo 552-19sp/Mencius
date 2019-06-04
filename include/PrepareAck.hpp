@@ -24,9 +24,14 @@ class PrepareAck {
  public:
   PrepareAck();
   explicit PrepareAck(
+      int instance,
       int ballot_num,
       int accepted_ballot,
       KVStore::AMOCommand accepted_value);
+
+  int GetInstance() const {
+    return instance_;
+  }
 
   int GetBallotNum() const {
     return ballot_num_;
@@ -49,11 +54,13 @@ class PrepareAck {
 
   template<class Archive> void serialize(Archive &ar,
       unsigned int _ /* version */) {
+    ar & instance_;
     ar & ballot_num_;
     ar & accepted_ballot_;
     ar & accepted_value_;
   }
 
+  int instance_;
   int ballot_num_;
   int accepted_ballot_;
   KVStore::AMOCommand accepted_value_;

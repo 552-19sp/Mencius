@@ -23,11 +23,11 @@ class Learn {
  public:
   Learn();
   explicit Learn(
-      int ballot_num,
+      int instance,
       KVStore::AMOCommand value);
 
-  int GetBallotNum() const {
-    return ballot_num_;
+  int GetInstance() const {
+    return instance_;
   }
 
   KVStore::AMOCommand GetValue() const {
@@ -43,11 +43,11 @@ class Learn {
 
   template<class Archive> void serialize(Archive &ar,
       unsigned int _ /* version */) {
-    ar & ballot_num_;
+    ar & instance_;
     ar & value_;
   }
 
-  int ballot_num_;
+  int instance_;
   KVStore::AMOCommand value_;
 };
 

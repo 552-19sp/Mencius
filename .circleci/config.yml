@@ -23,9 +23,6 @@ jobs:
             - run:
                 name: Install Python
                 command: 'sudo apt-get update && sudo apt-get install python3'
-            - run:
-                name: Run Integration Tests
-                command: 'make all && cd test && python test_main.py'
     static-analysis:
         docker:
             - image: circleci/buildpack-deps:bionic 

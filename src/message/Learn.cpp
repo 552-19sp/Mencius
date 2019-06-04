@@ -7,9 +7,9 @@ namespace message {
 Learn::Learn() {}
 
 Learn::Learn(
-    int ballot_num,
+    int instance,
     KVStore::AMOCommand value)
-    : ballot_num_(ballot_num),
+    : instance_(instance),
       value_(value) {}
 
 std::string Learn::Encode() const {

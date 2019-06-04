@@ -7,10 +7,12 @@ namespace message {
 PrepareAck::PrepareAck() {}
 
 PrepareAck::PrepareAck(
+    int instance,
     int ballot_num,
     int accepted_ballot,
     KVStore::AMOCommand accepted_value)
-    : ballot_num_(ballot_num),
+    : instance_(instance),
+      ballot_num_(ballot_num),
       accepted_ballot_(accepted_ballot),
       accepted_value_(accepted_value) {}
 

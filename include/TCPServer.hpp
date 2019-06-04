@@ -3,6 +3,7 @@
 #ifndef INCLUDE_TCPSERVER_HPP_
 #define INCLUDE_TCPSERVER_HPP_
 
+#include <memory>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -80,6 +81,8 @@ class TCPServer {
   void HandleDropRate(const message::DropRate &m,
     TCPConnection::pointer connection);
 
+  void OnLearned(int instance, KVStore::AMOCommand &value);
+
   // TODO(ljoswiak): Clean up app_ on object destruction
 
  private:
@@ -95,6 +98,12 @@ class TCPServer {
   void HandleConnection(TCPConnection::pointer new_connection,
     const boost::system::error_code &error);
 
+  std::shared_ptr<Round> GetRound(int instance);
+  void CheckCommit();
+
+  // Returns the coordinator of the given Mencius instance.
+  std::string Owner(int instance);
+
   boost::asio::io_context &io_context_;
   std::string port_;
   std::string server_name_;
@@ -106,11 +115,14 @@ class TCPServer {
   Channel channel_;
 
   int num_servers_;
-
   int drop_rate_;
 
-  // TODO(ljoswiak): Update to store multiple rounds
-  Round *round_;
+  // Mencius state.
+  std::unordered_map<int, TCPConnection::pointer> clients_;
+  std::unordered_map<int, std::shared_ptr<Round>> rounds_;
+  std::unordered_map<int, KVStore::AMOCommand> proposed_;
+  int index_;
+  int expected_;
 };
 
 #endif  // INCLUDE_TCPSERVER_HPP_

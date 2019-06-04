@@ -22,6 +22,7 @@ class AMOCommand {
   ~AMOCommand();
 
   bool operator< (const AMOCommand &r) const;
+  bool operator== (const AMOCommand &r) const;
 
   int GetSeqNum() const;
   std::string GetKey() const;
