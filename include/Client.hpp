@@ -19,7 +19,7 @@ using boost::asio::ip::tcp;
 
 class Client {
  public:
-  explicit Client(boost::asio::io_context &io_context,
+  explicit Client(boost::asio::io_context &io_context, int drop_rate,
     const std::vector<KVStore::AMOCommand> &workload);
 
   void Start(tcp::resolver::iterator endpoint_iter);
@@ -36,15 +36,15 @@ class Client {
   void HandleRead(const boost::system::error_code &ec);
 
   void StartWrite(KVStore::AMOCommand command);
-  void HandleWriteResult(const boost::system::error_code &ec,
-    KVStore::AMOCommand command);
+  void HandleWriteResult(const boost::system::error_code &ec);
+
+  void SetServerDropRate();
 
   void CheckDeadline();
 
   bool stopped_;
+  int server_drop_rate_;
   tcp::socket socket_;
-  std::shared_ptr<message::Request> last_request_;
-  std::shared_ptr<message::Request> last_response_;
   std::vector<KVStore::AMOCommand> workload_;
   boost::asio::streambuf input_buffer_;
   boost::asio::steady_timer read_timer_;

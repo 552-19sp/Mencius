@@ -57,12 +57,15 @@ std::vector<KVStore::AMOCommand> Utilities::ParseOperations(
       std::string value = "";
       KVStore::Action action = KVStore::Action::kGet;
 
-      // TODO(jjohnson): Add support for other types of ops.
       if (action_str.compare("PUT") == 0) {
         value = op_parts[2];
         action = KVStore::Action::kPut;
+      } else if (action_str.compare("GET") == 0) {
+        action = KVStore::Action::kGet;
+      } else if (action_str.compare("APPEND") == 0) {
+        action = KVStore::Action::kAppend;
       } else {
-        return ops;
+        action = KVStore::Action::kNoOp;
       }
 
       KVStore::AMOCommand op(i, key, value, action);

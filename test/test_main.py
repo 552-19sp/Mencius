@@ -28,7 +28,7 @@ def run_server(operations):
     seperator = ","
     joined_ops = seperator.join(operations)
     cmd = "../bin/client"
-    CLIENT_PROCS.append(subprocess.Popen((cmd, joined_ops)))
+    CLIENT_PROCS.append(subprocess.Popen((cmd, str(3), str(0), joined_ops)))
 
 
 def clean_op(dirty_op):

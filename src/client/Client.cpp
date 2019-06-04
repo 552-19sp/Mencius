@@ -7,14 +7,22 @@
 #include "Action.hpp"
 #include "AMOCommand.hpp"
 #include "AMOResponse.hpp"
+#include "DropRate.hpp"
 #include "Message.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
 #include "Utilities.hpp"
 
-Client::Client(boost::asio::io_context &io_context,
+// TODO(jjohnson): Update this once we have the real cluster addresses
+// and read them from the config here.
+const char kThreeReplicaAddr[] = "35.171.129.43";
+const char kFiveReplicaAddr[] = "35.171.129.43";
+const char kReplicaPort[] = "11111";
+
+Client::Client(boost::asio::io_context &io_context, int drop_rate,
   const std::vector<KVStore::AMOCommand> &workload)
   : stopped_(false),
+    server_drop_rate_(drop_rate),
     socket_(io_context),
     workload_(workload),
     read_timer_(io_context),
@@ -73,18 +81,20 @@ void Client::HandleConnect(const boost::system::error_code &ec,
   } else {
     // Connection successfully established.
     std::cout << "Connected to " << endpoint_iter->endpoint() << std::endl;
+    StartRead();
+    SetServerDropRate();
     ProcessWorkload();
   }
 }
 
 void Client::ProcessWorkload() {
-  for (auto &command : workload_) {
-    if (command.GetAction() == KVStore::Action::kPut) {
-      StartWrite(command);
-    } else {
-      // TODO(jjohnson): handle other operation types here.
-    }
+  if (workload_.size() == 0) {
+    std::cout << "no workload" << std::endl;
+    exit(EXIT_SUCCESS);
   }
+  auto command = workload_.back();
+  workload_.pop_back();
+  StartWrite(command);
 }
 
 void Client::StartRead() {
@@ -111,9 +121,17 @@ void Client::HandleRead(const boost::system::error_code &ec) {
       auto m = message::Message::Decode(const_data);
       if (m.GetMessageType() == message::MessageType::kResponse) {
         auto response = message::Response::Decode(m.GetEncodedMessage());
-
         auto value = response.GetResponse().GetValue();
         std::cout << "Received reply. Value: " << value << std::endl;
+
+        // Keep executing any remaining workload, exit if finished.
+        if (workload_.size() == 0) {
+          std::cout << "finished workload" << std::endl;
+          exit(EXIT_SUCCESS);
+        }
+        auto command = workload_.back();
+        workload_.pop_back();
+        StartWrite(command);
       }
     }
 
@@ -130,24 +148,21 @@ void Client::HandleRead(const boost::system::error_code &ec) {
 void Client::StartWrite(KVStore::AMOCommand command) {
   if (stopped_) return;
 
-  last_request_ = std::make_shared<message::Request>(message::Request(command));
-  last_response_ = nullptr;
-  auto encoded = message::Message(last_request_->Encode(),
-    message::MessageType::kRequest).Encode();
+  auto request = message::Request(command);
+  auto encoded = message::Message(request.Encode(),
+      message::MessageType::kRequest).Encode();
   std::cout << "Sending request to server" << std::endl;
 
   boost::asio::async_write(socket_,
       boost::asio::buffer(encoded),
-      boost::bind(&Client::HandleWriteResult, this, _1, command));
+      boost::bind(&Client::HandleWriteResult, this, _1));
   // TODO(ljoswiak): Can also set a deadline for message sends.
 }
 
-void Client::HandleWriteResult(const boost::system::error_code &ec,
-    KVStore::AMOCommand command) {
+void Client::HandleWriteResult(const boost::system::error_code &ec) {
   if (stopped_) return;
 
   if (!ec) {
-    // TODO(jjohnson): Write this to a shared output file.
     std::cout << "Successfully wrote message" << std::endl;
     /*
     write_timer_.expires_after(boost::asio::chrono::seconds(10));
@@ -157,6 +172,17 @@ void Client::HandleWriteResult(const boost::system::error_code &ec,
     std::cerr << "Error on write: " << ec.message() << std::endl;
     Stop();
   }
+}
+
+void Client::SetServerDropRate() {
+  auto request = message::DropRate(server_drop_rate_);
+  auto encoded = message::Message(request.Encode(),
+      message::MessageType::kDropRate).Encode();
+  std::cout << "sending server drop rate message" << std::endl;
+
+  boost::asio::async_write(socket_,
+      boost::asio::buffer(encoded),
+      boost::bind(&Client::HandleWriteResult, this, _1));
 }
 
 void Client::CheckDeadline() {
@@ -175,22 +201,29 @@ void Client::CheckDeadline() {
   read_timer_.async_wait(boost::bind(&Client::CheckDeadline, this));
 }
 
-const char kConfigFilePath[] = "config";
-
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    std::cerr << "Usage: client <operations>" << std::endl;
+  if (argc != 4) {
+    std::cerr << "Usage: client <number-of-servers> " <<
+      " <server-drop-rate> <operations>" << std::endl;
     return 1;
   }
 
-  auto server_addresses = Utilities::ReadConfig(kConfigFilePath);
-  auto workload = Utilities::ParseOperations(argv[1]);
+  int num_servers = atoi(argv[1]);
+  int server_drop_rate = atoi(argv[2]);
+  auto workload = Utilities::ParseOperations(argv[3]);
 
   boost::asio::io_context io_context;
   tcp::resolver r(io_context);
-  Client c(io_context, workload);
+  Client c(io_context, server_drop_rate, workload);
 
-  c.Start(r.resolve(tcp::resolver::query("127.0.0.1", "11111")));
+  if (num_servers == 3) {
+    c.Start(r.resolve(tcp::resolver::query(kThreeReplicaAddr, kReplicaPort)));
+  } else if (num_servers == 5) {
+    c.Start(r.resolve(tcp::resolver::query(kFiveReplicaAddr, kReplicaPort)));
+  } else {
+    std::cerr << "unsupported number of replicas" << std::endl;
+    return 1;
+  }
 
   io_context.run();
 }

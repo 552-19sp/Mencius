@@ -21,6 +21,7 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
       resolver_(io_context),
       app_(new KVStore::AMOStore()),
       num_servers_(servers.size()),
+      drop_rate_(0),
       round_(new Round(this)) {
   std::cout << "max number of servers: " << num_servers_ << std::endl;
   // TODO(ljoswiak): This should repeat on a timer to reopen any
@@ -148,6 +149,11 @@ void TCPServer::Handle(
       HandleLearn(learn, connection);
       break;
     }
+    case message::MessageType::kDropRate: {
+      auto drop_rate = message::DropRate::Decode(encoded);
+      HandleDropRate(drop_rate, connection);
+      break;
+    }
     default: {
       throw std::logic_error("unrecognized message type");
     }
@@ -202,6 +208,11 @@ void TCPServer::TCPServer::HandleAccept(const message::Accept &m,
 void TCPServer::HandleLearn(const message::Learn &m,
     TCPConnection::pointer connection) {
   round_->HandleLearn(m, connection);
+}
+
+void TCPServer::HandleDropRate(const message::DropRate &m,
+    TCPConnection::pointer connection) {
+  drop_rate_ = m.GetDropRate();
 }
 
 std::string TCPServer::GetServerName() const {

@@ -14,6 +14,7 @@
 #include "Accept.hpp"
 #include "AMOStore.hpp"
 #include "Channel.hpp"
+#include "DropRate.hpp"
 #include "Learn.hpp"
 #include "Message.hpp"
 #include "Request.hpp"
@@ -35,6 +36,10 @@ class TCPServer {
   std::string GetServerName(TCPConnection::pointer connection) const;
   int GetNumServers() const {
     return num_servers_;
+  }
+
+  int GetDropRate() const {
+    return drop_rate_;
   }
 
   void Disconnect(TCPConnection::pointer connection);
@@ -72,6 +77,8 @@ class TCPServer {
     TCPConnection::pointer connection);
   void HandleLearn(const message::Learn &m,
     TCPConnection::pointer connection);
+  void HandleDropRate(const message::DropRate &m,
+    TCPConnection::pointer connection);
 
   // TODO(ljoswiak): Clean up app_ on object destruction
 
@@ -99,6 +106,8 @@ class TCPServer {
   Channel channel_;
 
   int num_servers_;
+
+  int drop_rate_;
 
   // TODO(ljoswiak): Update to store multiple rounds
   Round *round_;
