@@ -4,6 +4,8 @@
 
 #include <stdlib.h>
 
+#include <iostream>
+
 #include <map>
 #include <string>
 
@@ -12,10 +14,6 @@ using std::map;
 using std::string;
 
 string KVStore::Put(const string &key, const string &value) {
-  if (store_.find(key) != store_.end()) {
-    // TODO(jackkhuu): Support an Error Message
-    exit(EXIT_FAILURE);
-  }
   store_[key] = value;
 
   return store_[key];
@@ -24,6 +22,7 @@ string KVStore::Put(const string &key, const string &value) {
 string KVStore::Append(const string &key, const string &value) {
   if (store_.find(key) == store_.end()) {
     // TODO(jackkhuu): Support an Error Message
+    std::cerr << "KVStore: cannot find key: " << key << std::endl;
     exit(EXIT_FAILURE);
   }
   store_[key] = store_[key] + value;

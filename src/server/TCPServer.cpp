@@ -267,7 +267,6 @@ void TCPServer::CheckCommit() {
       break;
     }
 
-    std::cout << "  action: " << learned->GetAction() << std::endl;
     if (learned->GetAction() != KVStore::Action::kNoOp) {
       // Value is committed. Execute and return to client.
       std::cout << "  committing value for instance " << expected_ << std::endl;

@@ -22,6 +22,7 @@ class AMOCommand {
   ~AMOCommand();
 
   bool operator< (const AMOCommand &r) const;
+  friend std::ostream& operator<< (std::ostream &os, const AMOCommand &r);
   bool operator== (const AMOCommand &r) const;
 
   int GetSeqNum() const;

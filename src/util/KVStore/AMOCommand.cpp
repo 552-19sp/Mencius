@@ -36,6 +36,15 @@ bool AMOCommand::operator< (const AMOCommand &r) const {
   return this->seq_num_ < r.seq_num_;
 }
 
+std::ostream& operator<< (std::ostream &os, const AMOCommand &r) {
+  os << "AMOCommand:" << std::endl
+      << "  seq num: " << r.seq_num_ << std::endl
+      << "      key: " << r.key_ << std::endl
+      << "    value: " << r.value_ << std::endl
+      << "   action: " << r.action_;
+  return os;
+}
+
 bool AMOCommand::operator== (const AMOCommand &r) const {
   return this->seq_num_ == r.seq_num_ &&
       this->key_.compare(r.key_) == 0 &&
