@@ -12,6 +12,7 @@
 #include "Accept.hpp"
 #include "AMOCommand.hpp"
 #include "Learn.hpp"
+#include "Prepare.hpp"
 #include "PrepareAck.hpp"
 #include "Propose.hpp"
 #include "TCPConnection.hpp"
@@ -35,6 +36,10 @@ class Round {
   void Revoke();
 
   void HandlePropose(const message::Propose &m,
+      TCPConnection::pointer connection);
+  void HandlePrepare(const message::Prepare &m,
+      TCPConnection::pointer connection);
+  void HandlePrepareAck(const message::PrepareAck &m,
       TCPConnection::pointer connection);
   void HandleAccept(const message::Accept &m,
       TCPConnection::pointer connection);

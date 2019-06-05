@@ -13,7 +13,7 @@
 #include "AMOCommand.hpp"
 #include "AMOResponse.hpp"
 #include "DropRate.hpp"
-#include "KillServer.hpp"
+#include "ServerStatus.hpp"
 #include "Message.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
@@ -21,7 +21,8 @@
 
 // TODO(jjohnson): Update this once we have the real cluster addresses
 // and read them from the config here.
-const char kThreeReplicaAddr[] = "35.171.129.43";
+// const char kThreeReplicaAddr[] = "35.171.129.43";
+const char kThreeReplicaAddr[] = "127.0.0.1";
 const char kFiveReplicaAddr[] = "35.171.129.43";
 const char kReplicaPort[] = "11111";
 
@@ -217,6 +218,8 @@ void Client::SetServerDropRate() {
 }
 
 void Client::KillServersRandomly(int max_failures) {
+  /*
+  TODO(ljoswiak): Update to use ServerStatus messages
   auto request = message::KillServer();
   auto encoded = message::Message(request.Encode(),
       message::MessageType::kKillServer).Encode();
@@ -230,6 +233,7 @@ void Client::KillServersRandomly(int max_failures) {
         boost::asio::buffer(encoded),
         boost::bind(&Client::HandleWriteResult, this, _1));
   }
+  */
 }
 
 void Client::CheckDeadline() {

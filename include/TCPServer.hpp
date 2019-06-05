@@ -35,7 +35,11 @@ class TCPServer {
   std::string GetServerName() const;
   std::string GetServerName(TCPConnection::pointer connection) const;
   int GetNumServers() const {
-    return num_servers_;
+    return servers_.size();
+  }
+
+  message::Status GetServerStatus() const {
+    return status_;
   }
 
   void Disconnect(TCPConnection::pointer connection);
@@ -44,6 +48,10 @@ class TCPServer {
   // connections, as well as calling local handler to
   // handle message on this server.
   void Broadcast(const std::string &data);
+
+  // Broadcast a message to all servers other than the
+  // sending server.
+  void BroadcastToOthers(const std::string &data);
 
   // Handles delivery of message to a single server. If
   // the server is this server, handles delivery by
@@ -63,7 +71,7 @@ class TCPServer {
   void HandleRequest(const message::Request &m,
     TCPConnection::pointer connection);
 
-  void Prepare(const message::Prepare &m,
+  void HandlePrepare(const message::Prepare &m,
     TCPConnection::pointer connection);
   void HandlePrepareAck(const message::PrepareAck &m,
     TCPConnection::pointer connection);
@@ -73,11 +81,17 @@ class TCPServer {
     TCPConnection::pointer connection);
   void HandleLearn(const message::Learn &m,
     TCPConnection::pointer connection);
-  void HandleKillServer();
+  void HandleServerStatus(const message::ServerStatus &m,
+    TCPConnection::pointer connection);
+
+  // Returns the coordinator of the given Mencius instance.
+  std::string Owner(int instance);
 
   // When receiving a proposal for instance i, skip all
   // unused instances prior to i this server owns.
   void OnSuggestion(int instance);
+  // Called when the given server is suspected of being offline.
+  void OnSuspect(std::string server);
   void OnLearned(int instance, KVStore::AMOCommand &value);
 
   // TODO(ljoswiak): Clean up app_ on object destruction
@@ -98,20 +112,26 @@ class TCPServer {
   std::shared_ptr<Round> GetRound(int instance);
   void CheckCommit();
 
-  // Returns the coordinator of the given Mencius instance.
-  std::string Owner(int instance);
+  // Timer handlers.
+  void HeartbeatCheckTimer();
+
+  // Returns the learned value of the given instance, or
+  // nullptr if no learned value exists.
+  std::shared_ptr<KVStore::AMOCommand> Learned(int instance);
 
   boost::asio::io_context &io_context_;
   std::string port_;
   std::string server_name_;
   tcp::acceptor acceptor_;
   tcp::resolver resolver_;
+  boost::asio::steady_timer heartbeat_check_timer_;
 
   KVStore::AMOStore *app_;
 
   Channel channel_;
 
-  int num_servers_;
+  std::vector<std::tuple<std::string, std::string, std::string>> servers_;
+  message::Status status_;
 
   // Mencius state.
   std::unordered_map<int, TCPConnection::pointer> clients_;

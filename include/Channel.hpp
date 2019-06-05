@@ -5,6 +5,8 @@
 
 #include <set>
 #include <string>
+#include <tuple>
+#include <vector>
 
 #include "TCPConnection.hpp"
 
@@ -14,6 +16,14 @@ class Channel {
   void Remove(TCPConnection::pointer connection);
   // Deliver message to all connections in the channel.
   void Deliver(const std::string &message);
+
+  // Returns a list of servers that don't currently have open
+  // connections, based on the overall server list passed as
+  // a parameter.
+  std::vector<std::string> OfflineServers(
+      std::vector<std::tuple<std::string, std::string, std::string>> &servers,
+      std::string &self_name);
+
  private:
   std::set<TCPConnection::pointer> connections_;
 };

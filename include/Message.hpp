@@ -23,7 +23,7 @@ enum MessageType {
   kAccept,
   kLearn,
   kDropRate,
-  kKillServer
+  kServerStatus
 };
 
 class Message {

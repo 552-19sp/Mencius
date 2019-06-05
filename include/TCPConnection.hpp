@@ -14,6 +14,7 @@
 
 #include "Request.hpp"
 #include "ServerAccept.hpp"
+#include "ServerStatus.hpp"
 
 class TCPServer;
 class Handler;
@@ -43,6 +44,8 @@ class TCPConnection
   void SetServerName(const std::string &server_name) {
     server_name_ = server_name;
   }
+
+  message::Status GetServerStatus();
 
   void Start();
 

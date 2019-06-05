@@ -43,6 +43,10 @@ TCPConnection::~TCPConnection() {
   std::cout << "TCPConnection destructor" << std::endl;
 }
 
+message::Status TCPConnection::GetServerStatus() {
+  return server_->GetServerStatus();
+}
+
 void TCPConnection::Stop() {
   std::cout << "Closing connection" << std::endl;
   server_->Disconnect(shared_from_this());

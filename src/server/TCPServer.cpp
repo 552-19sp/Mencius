@@ -7,10 +7,13 @@
 #include <boost/algorithm/string.hpp>
 
 #include "ServerAccept.hpp"
+#include "ServerStatus.hpp"
 #include "Response.hpp"
 #include "Utilities.hpp"
 
 const char kConfigFilePath[] = "config";
+
+const int kHeartbeatCheckTimeoutMillis = 100;
 
 TCPServer::TCPServer(boost::asio::io_context &io_context,
     std::string port,
@@ -19,10 +22,12 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
       port_(port),
       acceptor_(io_context, tcp::endpoint(tcp::v4(), std::stoi(port))),
       resolver_(io_context),
+      heartbeat_check_timer_(io_context),
       app_(new KVStore::AMOStore()),
-      num_servers_(servers.size()),
+      servers_(servers),
+      status_(message::Status::kOnline),
       expected_(0) {
-  std::cout << "max number of servers: " << num_servers_ << std::endl;
+  std::cout << "max number of servers: " << servers_.size() << std::endl;
   // TODO(ljoswiak): This should repeat on a timer to reopen any
   // dropped connections.
   // Open connections with other servers.
@@ -42,6 +47,10 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
     }
     counter++;
   }
+
+  heartbeat_check_timer_.expires_after(std::chrono::seconds(7));
+  heartbeat_check_timer_.async_wait(
+      boost::bind(&TCPServer::HeartbeatCheckTimer, this));
 
   StartAccept();
 }
@@ -117,7 +126,10 @@ void TCPServer::HandleConnection(TCPConnection::pointer new_connection,
 }
 
 void TCPServer::Disconnect(TCPConnection::pointer connection)  {
+  auto server_name = connection->GetServerName();
   channel_.Remove(connection);
+
+  OnSuspect(server_name);
 }
 
 void TCPServer::Handle(
@@ -138,6 +150,16 @@ void TCPServer::Handle(
       HandleRequest(request, connection);
       break;
     }
+    case message::MessageType::kPrepare: {
+      auto prepare = message::Prepare::Decode(encoded);
+      HandlePrepare(prepare, connection);
+      break;
+    }
+    case message::MessageType::kPrepareAck: {
+      auto prepare_ack = message::PrepareAck::Decode(encoded);
+      HandlePrepareAck(prepare_ack, connection);
+      break;
+    }
     case message::MessageType::kPropose: {
       auto propose = message::Propose::Decode(encoded);
       HandlePropose(propose, connection);
@@ -156,8 +178,9 @@ void TCPServer::Handle(
     case message::MessageType::kDropRate: {
       break;  // No need to set drop rate for TCPServer.
     }
-    case message::MessageType::kKillServer: {
-      HandleKillServer();
+    case message::MessageType::kServerStatus: {
+      auto kill = message::ServerStatus::Decode(encoded);
+      HandleServerStatus(kill, connection);
       break;
     }
     default: {
@@ -167,16 +190,26 @@ void TCPServer::Handle(
 }
 
 void TCPServer::Broadcast(const std::string &data) {
-  channel_.Deliver(data);
-  Handle(data, nullptr);
+  if (status_ == message::Status::kOnline) {
+    channel_.Deliver(data);
+    Handle(data, nullptr);
+  }
+}
+
+void TCPServer::BroadcastToOthers(const std::string &data) {
+  if (status_ == message::Status::kOnline) {
+    channel_.Deliver(data);
+  }
 }
 
 void TCPServer::Deliver(const std::string &data,
     TCPConnection::pointer connection) {
-  if (!connection) {
-    Handle(data, nullptr);
-  } else {
-    connection->Deliver(data);
+  if (status_ == message::Status::kOnline) {
+    if (!connection) {
+      Handle(data, nullptr);
+    } else {
+      connection->Deliver(data);
+    }
   }
 }
 
@@ -204,7 +237,7 @@ void TCPServer::HandleRequest(const message::Request &m,
         << index_ << std::endl;
     r->Suggest(command);
 
-    index_ += num_servers_;
+    index_ += servers_.size();
   }
 }
 
@@ -215,12 +248,16 @@ std::shared_ptr<Round> TCPServer::GetRound(int instance) {
   return rounds_[instance];
 }
 
-void TCPServer::Prepare(const message::Prepare &m,
+void TCPServer::HandlePrepare(const message::Prepare &m,
     TCPConnection::pointer connection) {
+  auto round = GetRound(m.GetInstance());
+  round->HandlePrepare(m, connection);
 }
 
 void TCPServer::HandlePrepareAck(const message::PrepareAck &m,
     TCPConnection::pointer connection) {
+  auto round = GetRound(m.GetInstance());
+  round->HandlePrepareAck(m, connection);
 }
 
 void TCPServer::HandlePropose(const message::Propose &m,
@@ -243,19 +280,34 @@ void TCPServer::HandleLearn(const message::Learn &m,
 
 std::string TCPServer::Owner(int instance) {
   auto server_addresses = Utilities::ReadConfig(kConfigFilePath);
-  int index = instance % num_servers_;
+  int index = instance % servers_.size();
   return std::get<2>(server_addresses[index]);
+}
+
+std::shared_ptr<KVStore::AMOCommand> TCPServer::Learned(int instance) {
+  return GetRound(instance)->GetLearnedValue();
 }
 
 void TCPServer::OnSuggestion(int instance) {
   std::cout << "OnSuggestion, instance = " << instance << std::endl;
 
-  for (int i = index_; i < instance; i += num_servers_) {
+  for (int i = index_; i < instance; i += servers_.size()) {
     std::cout << "  sending skip for instance " << i << std::endl;
     auto round = GetRound(i);
     round->Skip();
 
-    index_ += num_servers_;
+    index_ += servers_.size();
+  }
+}
+
+void TCPServer::OnSuspect(std::string server) {
+  for (int i = expected_; i < index_; i++) {
+    auto owner = Owner(i);
+    if (owner.compare(server) == 0 && !Learned(i)) {
+      std::cout << "  sending revoke for instance " << i << std::endl;
+      auto round = GetRound(i);
+      round->Revoke();
+    }
   }
 }
 
@@ -305,8 +357,38 @@ void TCPServer::OnLearned(int instance, KVStore::AMOCommand &value) {
   CheckCommit();
 }
 
-// TODO(jjohnson): Figure out how to kill a TCP server.
-void TCPServer::HandleKillServer() {}
+void TCPServer::HandleServerStatus(const message::ServerStatus &m,
+    TCPConnection::pointer connection) {
+  auto server_name = m.GetServerName();
+  auto status = m.GetServerStatus();
+  if (server_name.empty()) {
+    std::cerr << "Kill message must contain a server name" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  if (server_name.compare(server_name_) == 0) {
+    // If I as a server have been killed, I should continue
+    // to handle messages, but should drop all outgoing
+    // messages.
+    status_ = status;
+  } else if (status == message::Status::kOffline) {
+    OnSuspect(server_name);
+  }
+}
+
+void TCPServer::HeartbeatCheckTimer() {
+  std::vector<std::string> offline_servers =
+      channel_.OfflineServers(servers_, server_name_);
+
+  for (auto server_name : offline_servers) {
+    OnSuspect(server_name);
+  }
+
+  heartbeat_check_timer_.expires_at(heartbeat_check_timer_.expiry() +
+      std::chrono::milliseconds(kHeartbeatCheckTimeoutMillis));
+  heartbeat_check_timer_.async_wait(
+      boost::bind(&TCPServer::HeartbeatCheckTimer, this));
+}
 
 std::string TCPServer::GetServerName() const {
   return server_name_;
