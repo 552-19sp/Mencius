@@ -4,8 +4,6 @@
 
 #include <iostream>
 
-#include "ServerStatus.hpp"
-
 static void PrintConnections(std::set<TCPConnection::pointer> connections) {
   std::cout << "Connections:" << std::endl;
   for (auto &c : connections) {

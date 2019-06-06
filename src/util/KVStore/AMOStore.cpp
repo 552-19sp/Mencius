@@ -36,6 +36,10 @@ AMOResponse AMOStore::Execute(const AMOCommand &command) {
       case Action::kGet:
         s = kv_store_.Get(command.GetKey());
         break;
+      case Action::kKillServer:
+      case Action::kReviveServer:
+        s = "";
+        break;
       default:
         std::cerr << "KVStore: unrecognized action: "
             << command.GetAction() << std::endl;

@@ -43,7 +43,7 @@ TCPConnection::~TCPConnection() {
   std::cout << "TCPConnection destructor" << std::endl;
 }
 
-message::Status TCPConnection::GetServerStatus() {
+Status TCPConnection::GetServerStatus() {
   return server_->GetServerStatus();
 }
 

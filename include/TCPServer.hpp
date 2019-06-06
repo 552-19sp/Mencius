@@ -22,6 +22,7 @@
 #include "PrepareAck.hpp"
 #include "Propose.hpp"
 #include "Round.hpp"
+#include "Status.hpp"
 #include "TCPConnection.hpp"
 
 using boost::asio::ip::tcp;
@@ -38,7 +39,7 @@ class TCPServer {
     return servers_.size();
   }
 
-  message::Status GetServerStatus() const {
+  Status GetServerStatus() const {
     return status_;
   }
 
@@ -80,8 +81,6 @@ class TCPServer {
   void HandleAccept(const message::Accept &m,
     TCPConnection::pointer connection);
   void HandleLearn(const message::Learn &m,
-    TCPConnection::pointer connection);
-  void HandleServerStatus(const message::ServerStatus &m,
     TCPConnection::pointer connection);
 
   // Returns the coordinator of the given Mencius instance.
@@ -131,7 +130,7 @@ class TCPServer {
   Channel channel_;
 
   std::vector<std::tuple<std::string, std::string, std::string>> servers_;
-  message::Status status_;
+  Status status_;
 
   // Mencius state.
   std::unordered_map<int, TCPConnection::pointer> clients_;

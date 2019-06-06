@@ -3,10 +3,11 @@
 import subprocess
 import time
 import csv
+import random
 
 NUM_CLIENTS = [1, 2, 3] # Number of clients to benchmark with.
 NUM_SERVERS = [3, 5] # Number of servers each test cluster should have.
-NUM_BENCH_OPS = 10 # Number of ops to test per benchmark.
+NUM_BENCH_OPS = 100 # Number of ops to test per benchmark.
 NUM_CLIENT_OPS = 1000 # Number of background client ops.
 
 CMD = "GET A"
@@ -29,9 +30,27 @@ def run_background_clients(num_clients, num_servers, drop_rate, failure_code):
             stdout=subprocess.PIPE))
 
 
-def run_benchmark_client(num_servers, drop_rate, failure_code):
+def run_benchmark_client(num_servers, drop_rate, failure_code, random_failures):
     """ Runs a new benchmark client as a subprocess. """
-    joined_ops = ','.join([CMD] * NUM_BENCH_OPS)
+    # How many failures we can tolerate with num_servers servers.
+    tolerate_failures = (num_servers - 1) // 2
+
+    num_ops = NUM_BENCH_OPS
+    if random_failures:
+        num_ops -= tolerate_failures
+    
+    ops = [CMD] * num_ops
+
+    # Randomly insert tolerate_failures kill messages
+    if random_failures:
+        for i in range(tolerate_failures):
+            # Select random server to kill.
+            server = random.randint(1, num_servers)
+            index = random.randint(0, num_ops - 1)
+            ops.insert(index, f"kill server{server}")
+            
+    joined_ops = ','.join(ops)
+
     subprocess.call(
         [CLIENT_EXE, str(num_servers), str(drop_rate), str(failure_code), joined_ops],
         stdout=subprocess.PIPE)
@@ -48,7 +67,7 @@ def run_benchmark(num_clients, num_servers, drop_rate, random_failures, writer):
 
     # Time benchmarking client.
     start = time.time()
-    run_benchmark_client(num_servers, drop_rate, failure_code)
+    run_benchmark_client(num_servers, drop_rate, failure_code, random_failures)
     end = time.time()
 
     # Kill background clients, if any.

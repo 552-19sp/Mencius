@@ -14,7 +14,7 @@
 
 #include "Request.hpp"
 #include "ServerAccept.hpp"
-#include "ServerStatus.hpp"
+#include "Status.hpp"
 
 class TCPServer;
 class Handler;
@@ -45,7 +45,7 @@ class TCPConnection
     server_name_ = server_name;
   }
 
-  message::Status GetServerStatus();
+  Status GetServerStatus();
 
   void Start();
 

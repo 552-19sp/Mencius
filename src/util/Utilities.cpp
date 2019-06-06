@@ -64,6 +64,10 @@ std::vector<KVStore::AMOCommand> Utilities::ParseOperations(
         action = KVStore::Action::kGet;
       } else if (action_str.compare("APPEND") == 0) {
         action = KVStore::Action::kAppend;
+      } else if (action_str.compare("KILL") == 0) {
+        action = KVStore::Action::kKillServer;
+      } else if (action_str.compare("REVIVE") == 0) {
+        action = KVStore::Action::kReviveServer;
       } else {
         action = KVStore::Action::kNoOp;
       }

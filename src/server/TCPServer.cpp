@@ -7,7 +7,6 @@
 #include <boost/algorithm/string.hpp>
 
 #include "ServerAccept.hpp"
-#include "ServerStatus.hpp"
 #include "Response.hpp"
 #include "Utilities.hpp"
 
@@ -25,7 +24,7 @@ TCPServer::TCPServer(boost::asio::io_context &io_context,
       heartbeat_check_timer_(io_context),
       app_(new KVStore::AMOStore()),
       servers_(servers),
-      status_(message::Status::kOnline),
+      status_(Status::kOnline),
       expected_(0) {
   std::cout << "max number of servers: " << servers_.size() << std::endl;
   // TODO(ljoswiak): This should repeat on a timer to reopen any
@@ -178,11 +177,6 @@ void TCPServer::Handle(
     case message::MessageType::kDropRate: {
       break;  // No need to set drop rate for TCPServer.
     }
-    case message::MessageType::kServerStatus: {
-      auto kill = message::ServerStatus::Decode(encoded);
-      HandleServerStatus(kill, connection);
-      break;
-    }
     default: {
       throw std::logic_error("unrecognized message type");
     }
@@ -190,21 +184,21 @@ void TCPServer::Handle(
 }
 
 void TCPServer::Broadcast(const std::string &data) {
-  if (status_ == message::Status::kOnline) {
+  if (status_ == Status::kOnline) {
     channel_.Deliver(data);
     Handle(data, nullptr);
   }
 }
 
 void TCPServer::BroadcastToOthers(const std::string &data) {
-  if (status_ == message::Status::kOnline) {
+  if (status_ == Status::kOnline) {
     channel_.Deliver(data);
   }
 }
 
 void TCPServer::Deliver(const std::string &data,
     TCPConnection::pointer connection) {
-  if (status_ == message::Status::kOnline) {
+  if (status_ == Status::kOnline) {
     if (!connection) {
       Handle(data, nullptr);
     } else {
@@ -324,6 +318,26 @@ void TCPServer::CheckCommit() {
       // Value is committed. Execute and return to client.
       std::cout << "  committing value for instance " << expected_ << std::endl;
 
+      if (learned->GetAction() == KVStore::Action::kKillServer
+          && status_ == Status::kOnline) {
+        auto server = learned->GetKey();
+        std::cout << "  killing server " << server << std::endl;
+        if (server.compare(server_name_) == 0) {
+          // If I as a server have been killed, I should continue
+          // to handle messages, but should drop all outgoing
+          // messages.
+          status_ = Status::kOffline;
+        } else {
+          OnSuspect(server);
+        }
+      } else if (learned->GetAction() == KVStore::Action::kReviveServer
+          && status_ == Status::kOffline) {
+        auto server = learned->GetKey();
+        if (server.compare(server_name_) == 0) {
+          status_ = Status::kOnline;
+        }
+      }
+
       auto amo_response = app_->Execute(*learned);
       auto client_connection = clients_[expected_];
       if  (client_connection) {
@@ -355,25 +369,6 @@ void TCPServer::OnLearned(int instance, KVStore::AMOCommand &value) {
   }
 
   CheckCommit();
-}
-
-void TCPServer::HandleServerStatus(const message::ServerStatus &m,
-    TCPConnection::pointer connection) {
-  auto server_name = m.GetServerName();
-  auto status = m.GetServerStatus();
-  if (server_name.empty()) {
-    std::cerr << "Kill message must contain a server name" << std::endl;
-    exit(EXIT_FAILURE);
-  }
-
-  if (server_name.compare(server_name_) == 0) {
-    // If I as a server have been killed, I should continue
-    // to handle messages, but should drop all outgoing
-    // messages.
-    status_ = status;
-  } else if (status == message::Status::kOffline) {
-    OnSuspect(server_name);
-  }
 }
 
 void TCPServer::HeartbeatCheckTimer() {

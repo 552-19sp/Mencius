@@ -172,5 +172,4 @@ void Round::HandleLearn(const message::Learn &m,
       << instance_ << std::endl;
   learned_ = std::make_shared<KVStore::AMOCommand>(m.GetValue());
   server_->OnLearned(m.GetInstance(), *learned_);
-  // TODO(ljoswiak): Implement and call OnLearned
 }

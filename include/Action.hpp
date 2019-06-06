@@ -8,7 +8,9 @@ enum Action {
   kPut,
   kAppend,
   kGet,
-  kNoOp
+  kNoOp,
+  kKillServer,
+  kReviveServer
 };
 }  // namespace KVStore
 

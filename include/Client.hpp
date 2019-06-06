@@ -51,7 +51,6 @@ class Client {
   int num_servers_;
   int server_drop_rate_;
   bool kill_servers_randomly_;
-  std::thread *assasin_thread_;
   tcp::socket socket_;
   std::vector<KVStore::AMOCommand> workload_;
   boost::asio::streambuf input_buffer_;
