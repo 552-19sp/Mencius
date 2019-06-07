@@ -7,9 +7,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "TCPServer.hpp"
-
-Round::Round(TCPServer *server, int instance)
+Round::Round(Server *server, int instance)
   : server_(server),
     instance_(instance),
     prepared_ballot_(0),
@@ -50,7 +48,7 @@ void Round::Revoke() {
 }
 
 void Round::HandlePropose(const message::Propose &m,
-    TCPConnection::pointer connection) {
+    const std::string &server_name) {
   std::cout << server_->GetServerName() << " received propose in instance "
       << instance_ << std::endl;
 
@@ -80,12 +78,12 @@ void Round::HandlePropose(const message::Propose &m,
     auto accept = message::Accept(instance_, ballot_num, value);
     auto message = message::Message(accept.Encode(),
         message::MessageType::kAccept).Encode();
-    server_->Deliver(message, connection);
+    server_->Deliver(message, server_name);
   }
 }
 
 void Round::HandlePrepare(const message::Prepare &m,
-    TCPConnection::pointer connection) {
+    const std::string &server_name) {
   if (learned_) {
     // TODO(ljoswiak): Implement
     return;
@@ -98,19 +96,19 @@ void Round::HandlePrepare(const message::Prepare &m,
         accepted_ballot_, accepted_value_).Encode();
     auto message = message::Message(prepare_ack,
         message::MessageType::kPrepareAck).Encode();
-    server_->Deliver(message, connection);
+    server_->Deliver(message, server_name);
   }
 }
 
 void Round::HandlePrepareAck(const message::PrepareAck &m,
-    TCPConnection::pointer connection) {
+    const std::string &server_name) {
   if (learned_) {
     // TODO(ljoswiak): Implement
     return;
   }
 
   int ballot_num = m.GetBallotNum();
-  auto sender = server_->GetServerName(connection);
+  auto sender = server_name;
 
   prepared_history_[sender] = m;
   int quorum_size = QuorumSize(server_->GetNumServers());
@@ -140,7 +138,7 @@ void Round::HandlePrepareAck(const message::PrepareAck &m,
 }
 
 void Round::HandleAccept(const message::Accept &m,
-    TCPConnection::pointer connection) {
+    const std::string &server_name) {
   std::cout << server_->GetServerName() << " received accept in instance "
       << instance_ << std::endl;
 
@@ -151,7 +149,7 @@ void Round::HandleAccept(const message::Accept &m,
 
   auto ballot_num = m.GetBallotNum();
   auto accepted_value = m.GetAcceptedValue();
-  auto sender = server_->GetServerName(connection);
+  auto sender = server_name;
 
   if (ballot_num == 0) {
     // TODO(ljoswiak): Implement and call OnAcceptSuggestion
@@ -169,7 +167,7 @@ void Round::HandleAccept(const message::Accept &m,
 }
 
 void Round::HandleLearn(const message::Learn &m,
-    TCPConnection::pointer connection) {
+    const std::string &server_name) {
   std::cout << server_->GetServerName() << " received learn in instance "
       << instance_ << std::endl;
   learned_ = std::make_shared<KVStore::AMOCommand>(m.GetValue());

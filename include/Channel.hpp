@@ -17,6 +17,10 @@ class Channel {
   // Deliver message to all connections in the channel.
   void Deliver(const std::string &message);
 
+  // Given a server name, return the associated TCPConnection
+  // object, or nullptr if it doesn't exist.
+  TCPConnection::pointer GetConnection(std::string server_name);
+
   // Returns a list of servers that don't currently have open
   // connections, based on the overall server list passed as
   // a parameter.

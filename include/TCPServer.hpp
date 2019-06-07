@@ -23,11 +23,12 @@
 #include "Propose.hpp"
 #include "Round.hpp"
 #include "Status.hpp"
+#include "Server.hpp"
 #include "TCPConnection.hpp"
 
 using boost::asio::ip::tcp;
 
-class TCPServer {
+class TCPServer : public Server {
  public:
   TCPServer(boost::asio::io_context &io_context,
     std::string port,
@@ -45,21 +46,13 @@ class TCPServer {
 
   void Disconnect(TCPConnection::pointer connection);
 
-  // Handles sending the message to all servers with open
-  // connections, as well as calling local handler to
-  // handle message on this server.
   void Broadcast(const std::string &data);
 
   // Broadcast a message to all servers other than the
   // sending server.
   void BroadcastToOthers(const std::string &data);
 
-  // Handles delivery of message to a single server. If
-  // the server is this server, handles delivery by
-  // calling the appropriate handler, else delivers over
-  // the network.
-  void Deliver(const std::string &data,
-    TCPConnection::pointer connection);
+  void Deliver(const std::string &data, const std::string &server_name);
 
   // Called by a TCPConnection instance when it receives a new message.
   void Handle(const std::string &data, TCPConnection::pointer connection);
@@ -73,23 +66,19 @@ class TCPServer {
     TCPConnection::pointer connection);
 
   void HandlePrepare(const message::Prepare &m,
-    TCPConnection::pointer connection);
+    const std::string &server_name);
   void HandlePrepareAck(const message::PrepareAck &m,
-    TCPConnection::pointer connection);
+    const std::string &server_name);
   void HandlePropose(const message::Propose &m,
-    TCPConnection::pointer connection);
+    const std::string &server_name);
   void HandleAccept(const message::Accept &m,
-    TCPConnection::pointer connection);
+    const std::string &server_name);
   void HandleLearn(const message::Learn &m,
-    TCPConnection::pointer connection);
+    const std::string &server_name);
 
-  // Returns the coordinator of the given Mencius instance.
   std::string Owner(int instance);
 
-  // When receiving a proposal for instance i, skip all
-  // unused instances prior to i this server owns.
   void OnSuggestion(int instance);
-  // Called when the given server is suspected of being offline.
   void OnSuspect(std::string server);
   void OnLearned(int instance, KVStore::AMOCommand &value);
 
@@ -107,6 +96,10 @@ class TCPServer {
   void StartAccept();
   void HandleConnection(TCPConnection::pointer new_connection,
     const boost::system::error_code &error);
+
+  // Deliver data along a given TCPConnection.
+  void Deliver(const std::string &data,
+    TCPConnection::pointer connection);
 
   std::shared_ptr<Round> GetRound(int instance);
   void CheckCommit();

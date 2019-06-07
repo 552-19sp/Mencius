@@ -137,6 +137,10 @@ void TCPServer::Handle(
   auto m = message::Message::Decode(data);
   auto type = m.GetMessageType();
   auto encoded = m.GetEncodedMessage();
+  std::string server_name = "";
+  if (connection) {
+    server_name = connection->GetServerName();
+  }
 
   switch (type) {
     case message::MessageType::kServerSetup: {
@@ -151,27 +155,27 @@ void TCPServer::Handle(
     }
     case message::MessageType::kPrepare: {
       auto prepare = message::Prepare::Decode(encoded);
-      HandlePrepare(prepare, connection);
+      HandlePrepare(prepare, server_name);
       break;
     }
     case message::MessageType::kPrepareAck: {
       auto prepare_ack = message::PrepareAck::Decode(encoded);
-      HandlePrepareAck(prepare_ack, connection);
+      HandlePrepareAck(prepare_ack, server_name);
       break;
     }
     case message::MessageType::kPropose: {
       auto propose = message::Propose::Decode(encoded);
-      HandlePropose(propose, connection);
+      HandlePropose(propose, server_name);
       break;
     }
     case message::MessageType::kAccept: {
       auto accept = message::Accept::Decode(encoded);
-      HandleAccept(accept, connection);
+      HandleAccept(accept, server_name);
       break;
     }
     case message::MessageType::kLearn: {
       auto learn = message::Learn::Decode(encoded);
-      HandleLearn(learn, connection);
+      HandleLearn(learn, server_name);
       break;
     }
     case message::MessageType::kDropRate: {
@@ -193,6 +197,18 @@ void TCPServer::Broadcast(const std::string &data) {
 void TCPServer::BroadcastToOthers(const std::string &data) {
   if (status_ == Status::kOnline) {
     channel_.Deliver(data);
+  }
+}
+
+void TCPServer::Deliver(const std::string &data,
+    const std::string &server_name) {
+  auto connection = channel_.GetConnection(server_name);
+  if (status_ == Status::kOnline) {
+    if (server_name.empty()) {
+      Handle(data, nullptr);
+    } else {
+      connection->Deliver(data);
+    }
   }
 }
 
@@ -243,33 +259,33 @@ std::shared_ptr<Round> TCPServer::GetRound(int instance) {
 }
 
 void TCPServer::HandlePrepare(const message::Prepare &m,
-    TCPConnection::pointer connection) {
+    const std::string &server_name) {
   auto round = GetRound(m.GetInstance());
-  round->HandlePrepare(m, connection);
+  round->HandlePrepare(m, server_name);
 }
 
 void TCPServer::HandlePrepareAck(const message::PrepareAck &m,
-    TCPConnection::pointer connection) {
+    const std::string &server_name) {
   auto round = GetRound(m.GetInstance());
-  round->HandlePrepareAck(m, connection);
+  round->HandlePrepareAck(m, server_name);
 }
 
 void TCPServer::HandlePropose(const message::Propose &m,
-    TCPConnection::pointer connection) {
+    const std::string &server_name) {
   auto round = GetRound(m.GetInstance());
-  round->HandlePropose(m, connection);
+  round->HandlePropose(m, server_name);
 }
 
 void TCPServer::TCPServer::HandleAccept(const message::Accept &m,
-    TCPConnection::pointer connection) {
+    const std::string &server_name) {
   auto round = GetRound(m.GetInstance());
-  round->HandleAccept(m, connection);
+  round->HandleAccept(m, server_name);
 }
 
 void TCPServer::HandleLearn(const message::Learn &m,
-    TCPConnection::pointer connection) {
+    const std::string &server_name) {
   auto round = GetRound(m.GetInstance());
-  round->HandleLearn(m, connection);
+  round->HandleLearn(m, server_name);
 }
 
 std::string TCPServer::Owner(int instance) {

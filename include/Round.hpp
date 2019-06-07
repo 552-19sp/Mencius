@@ -12,16 +12,15 @@
 #include "Accept.hpp"
 #include "AMOCommand.hpp"
 #include "Learn.hpp"
+#include "Message.hpp"
 #include "Prepare.hpp"
 #include "PrepareAck.hpp"
 #include "Propose.hpp"
-#include "TCPConnection.hpp"
-
-class TCPServer;
+#include "Server.hpp"
 
 class Round {
  public:
-  explicit Round(TCPServer *server, int instance);
+  explicit Round(Server *server, int instance);
 
   std::shared_ptr<KVStore::AMOCommand> GetLearnedValue() const {
     return learned_;
@@ -36,18 +35,18 @@ class Round {
   void Revoke();
 
   void HandlePropose(const message::Propose &m,
-      TCPConnection::pointer connection);
+      const std::string &server_name);
   void HandlePrepare(const message::Prepare &m,
-      TCPConnection::pointer connection);
+      const std::string &server_name);
   void HandlePrepareAck(const message::PrepareAck &m,
-      TCPConnection::pointer connection);
+      const std::string &server_name);
   void HandleAccept(const message::Accept &m,
-      TCPConnection::pointer connection);
+      const std::string &server_name);
   void HandleLearn(const message::Learn &m,
-      TCPConnection::pointer connection);
+      const std::string &server_name);
 
  private:
-  TCPServer *server_;
+  Server *server_;
 
   int instance_;
 

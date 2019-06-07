@@ -35,6 +35,15 @@ void Channel::Deliver(const std::string &message) {
     boost::bind(&TCPConnection::Deliver, _1, boost::ref(message)));
 }
 
+TCPConnection::pointer Channel::GetConnection(std::string server_name) {
+  for (auto connection : connections_) {
+    if (connection->GetServerName().compare(server_name) == 0) {
+      return connection;
+    }
+  }
+  return nullptr;
+}
+
 std::vector<std::string> Channel::OfflineServers(
     std::vector<std::tuple<std::string, std::string, std::string>> &servers,
     std::string &self_name) {
