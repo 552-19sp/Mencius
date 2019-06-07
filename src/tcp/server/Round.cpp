@@ -1,4 +1,6 @@
 // Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu.
+//
+// Represents a single round of Coordinated Paxos.
 
 #include "Round.hpp"
 
