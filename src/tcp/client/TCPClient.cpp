@@ -224,9 +224,9 @@ void TCPClient::CheckDeadline() {
 
 int main(int argc, char **argv) {
   if (argc != 5) {
-    std::cerr << "Usage: client <number-of-servers> " <<
+    std::cerr << "Usage: " << argv[0] << " <number-of-servers> " <<
       " <server-drop-rate> <random-failure-bit> <operations>" << std::endl;
-    return 1;
+    return 0;
   }
 
   int num_servers = atoi(argv[1]);

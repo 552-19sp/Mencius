@@ -1,9 +1,7 @@
 // Copyright 2019 Lukas Joswiak, Justin Johnson, and Jack Khuu.
 
-#ifndef INCLUDE_UDPCLIENT_HPP_
-#define INCLUDE_UDPCLIENT_HPP_
-
-#include <string>
+#ifndef INCLUDE_UDPSERVER_HPP_
+#define INCLUDE_UDPSERVER_HPP_
 
 #include <boost/asio.hpp>
 
@@ -11,22 +9,21 @@ using boost::asio::ip::udp;
 
 const int kBufferSize = 1024;
 
-class UDPClient {
+class UDPServer {
  public:
-  UDPClient(boost::asio::io_context &io_context,
-      const std::string &host, const std::string &port);
-  ~UDPClient();
+  UDPServer(boost::asio::io_context &io_context, int port);
 
-  void Send(const std::string &message);
-
- private:
   void StartRead();
   void HandleRead(const boost::system::error_code &ec,
       std::size_t bytes_transferred);
 
+  void HandleSend(const boost::system::error_code &ec,
+      std::size_t bytes_transferred);
+
+ private:
   udp::socket socket_;
   udp::endpoint remote_endpoint_;
   std::array<char, kBufferSize> recv_buffer_;
 };
 
-#endif  // INCLUDE_UDPCLIENT_HPP_
+#endif  // INCLUDE_UDPSERVER_HPP_
