@@ -42,14 +42,14 @@ tcp: $(TCP_CLIENT_TARGET) $(TCP_SERVER_TARGET)
 udp: $(UDP_CLIENT_TARGET) $(UDP_SERVER_TARGET)
 
 # Link TCP executables
-$(TCP_CLIENT_TARGET): obj/tcp/client/Client.o $(UTIL_OBJ) $(MESSAGE_OBJ)
+$(TCP_CLIENT_TARGET): obj/tcp/client/TCPClient.o $(UTIL_OBJ) $(MESSAGE_OBJ)
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
 $(TCP_SERVER_TARGET): $(TCP_SERVER_OBJ) $(UTIL_OBJ) $(MESSAGE_OBJ)
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
 # Link UDP executables
-$(UDP_CLIENT_TARGET): obj/udp/client/Client.o $(UTIL_OBJ) $(MESSAGE_OBJ)
+$(UDP_CLIENT_TARGET): obj/udp/client/UDPClient.o $(UTIL_OBJ) $(MESSAGE_OBJ)
 	$(CC) $^ -o $(BINDIR)/$@ $(LIBS)
 
 $(UDP_SERVER_TARGET): $(UDP_SERVER_OBJ) $(UTIL_OBJ) $(MESSAGE_OBJ)
@@ -66,14 +66,14 @@ $(OBJDIR)/KVStore/%.o: $(SRCDIR)/util/KVStore/%.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # TCP src -> obj
-$(OBJDIR)/tcp/client/Client.o: $(SRCDIR)/tcp/client/Client.cpp | $(OBJDIR) $(BINDIR)
+$(OBJDIR)/tcp/client/TCPClient.o: $(SRCDIR)/tcp/client/TCPClient.cpp | $(OBJDIR) $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/tcp/server/%.o: $(SRCDIR)/tcp/server/%.cpp | $(OBJDIR) $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # UDP src -> obj
-$(OBJDIR)/udp/client/Client.o: $(SRCDIR)/udp/client/Client.cpp | $(OBJDIR) $(BINDIR)
+$(OBJDIR)/udp/client/UDPClient.o: $(SRCDIR)/udp/client/UDPClient.cpp | $(OBJDIR) $(BINDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/udp/server/%.o: $(SRCDIR)/udp/server/%.cpp | $(OBJDIR) $(BINDIR)

@@ -1,6 +1,6 @@
 // Copyright 2019 Justin Johnson, Lukas Joswiak, and Jack Khuu
 
-#include "Client.hpp"
+#include "TCPClient.hpp"
 
 #include <chrono>
 
@@ -23,7 +23,7 @@ const char kThreeReplicaAddr[] = "35.171.129.43";
 const char kFiveReplicaAddr[] = "35.171.129.43";
 const char kReplicaPort[] = "11111";
 
-Client::Client(boost::asio::io_context &io_context, int num_servers,
+TCPClient::TCPClient(boost::asio::io_context &io_context, int num_servers,
     int drop_rate,  bool kill_servers,
     const std::vector<KVStore::AMOCommand> &workload)
     : stopped_(false),
@@ -38,21 +38,21 @@ Client::Client(boost::asio::io_context &io_context, int num_servers,
   std::reverse(workload_.begin(), workload_.end());
 }
 
-void Client::Start(tcp::resolver::iterator endpoint_iter) {
+void TCPClient::Start(tcp::resolver::iterator endpoint_iter) {
   StartConnect(endpoint_iter);
 
   // Start the timeout timer.
-  read_timer_.async_wait(boost::bind(&Client::CheckDeadline, this));
+  read_timer_.async_wait(boost::bind(&TCPClient::CheckDeadline, this));
 }
 
-void Client::Stop() {
+void TCPClient::Stop() {
   stopped_ = true;
   socket_.close();
   read_timer_.cancel();
   write_timer_.cancel();
 }
 
-void Client::StartConnect(tcp::resolver::iterator endpoint_iter) {
+void TCPClient::StartConnect(tcp::resolver::iterator endpoint_iter) {
   if (endpoint_iter != tcp::resolver::iterator()) {
     std::cout << "Trying to resolve " << endpoint_iter->endpoint() << std::endl;
 
@@ -60,7 +60,7 @@ void Client::StartConnect(tcp::resolver::iterator endpoint_iter) {
     read_timer_.expires_after(boost::asio::chrono::seconds(60));
 
     socket_.async_connect(endpoint_iter->endpoint(),
-      boost::bind(&Client::HandleConnect,
+      boost::bind(&TCPClient::HandleConnect,
       this,
       _1,
       endpoint_iter));
@@ -70,7 +70,7 @@ void Client::StartConnect(tcp::resolver::iterator endpoint_iter) {
   }
 }
 
-void Client::HandleConnect(const boost::system::error_code &ec,
+void TCPClient::HandleConnect(const boost::system::error_code &ec,
     tcp::resolver::iterator endpoint_iter) {
   if (stopped_) {
     return;
@@ -105,7 +105,7 @@ void Client::HandleConnect(const boost::system::error_code &ec,
   }
 }
 
-void Client::ProcessWorkload() {
+void TCPClient::ProcessWorkload() {
   if (workload_.size() == 0) {
     std::cout << "no workload" << std::endl;
     exit(EXIT_SUCCESS);
@@ -116,16 +116,16 @@ void Client::ProcessWorkload() {
   StartWrite(command);
 }
 
-void Client::StartRead() {
+void TCPClient::StartRead() {
   read_timer_.expires_after(boost::asio::chrono::seconds(30));
 
   boost::asio::async_read_until(socket_,
       input_buffer_,
       '\n',
-      boost::bind(&Client::HandleRead, this, _1));
+      boost::bind(&TCPClient::HandleRead, this, _1));
 }
 
-void Client::HandleRead(const boost::system::error_code &ec) {
+void TCPClient::HandleRead(const boost::system::error_code &ec) {
   if (stopped_) {
     return;
   }
@@ -166,7 +166,7 @@ void Client::HandleRead(const boost::system::error_code &ec) {
   }
 }
 
-void Client::StartWrite(KVStore::AMOCommand command) {
+void TCPClient::StartWrite(KVStore::AMOCommand command) {
   if (stopped_) return;
 
   auto request = message::Request(command);
@@ -176,18 +176,18 @@ void Client::StartWrite(KVStore::AMOCommand command) {
 
   boost::asio::async_write(socket_,
       boost::asio::buffer(encoded),
-      boost::bind(&Client::HandleWriteResult, this, _1));
+      boost::bind(&TCPClient::HandleWriteResult, this, _1));
   // TODO(ljoswiak): Can also set a deadline for message sends.
 }
 
-void Client::HandleWriteResult(const boost::system::error_code &ec) {
+void TCPClient::HandleWriteResult(const boost::system::error_code &ec) {
   if (stopped_) return;
 
   if (!ec) {
     std::cout << "Successfully wrote message" << std::endl;
     /*
     write_timer_.expires_after(boost::asio::chrono::seconds(10));
-    write_timer_.async_wait(boost::bind(&Client::StartWrite, this));
+    write_timer_.async_wait(boost::bind(&TCPClient::StartWrite, this));
     */
   } else {
     std::cerr << "Error on write: " << ec.message() << std::endl;
@@ -195,7 +195,7 @@ void Client::HandleWriteResult(const boost::system::error_code &ec) {
   }
 }
 
-void Client::SetServerDropRate() {
+void TCPClient::SetServerDropRate() {
   auto request = message::DropRate(server_drop_rate_);
   auto encoded = message::Message(request.Encode(),
       message::MessageType::kDropRate).Encode();
@@ -203,10 +203,10 @@ void Client::SetServerDropRate() {
 
   boost::asio::async_write(socket_,
       boost::asio::buffer(encoded),
-      boost::bind(&Client::HandleWriteResult, this, _1));
+      boost::bind(&TCPClient::HandleWriteResult, this, _1));
 }
 
-void Client::CheckDeadline() {
+void TCPClient::CheckDeadline() {
   if (stopped_) {
     return;
   }
@@ -219,7 +219,7 @@ void Client::CheckDeadline() {
     read_timer_.expires_after(boost::asio::chrono::hours(9999));
   }
 
-  read_timer_.async_wait(boost::bind(&Client::CheckDeadline, this));
+  read_timer_.async_wait(boost::bind(&TCPClient::CheckDeadline, this));
 }
 
 int main(int argc, char **argv) {
@@ -236,7 +236,8 @@ int main(int argc, char **argv) {
 
   boost::asio::io_context io_context;
   tcp::resolver r(io_context);
-  Client c(io_context, num_servers, server_drop_rate, kill_servers, workload);
+  TCPClient c(io_context, num_servers, server_drop_rate, kill_servers,
+      workload);
 
   if (num_servers == 3) {
     c.Start(r.resolve(tcp::resolver::query(kThreeReplicaAddr, kReplicaPort)));

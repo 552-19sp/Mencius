@@ -1,7 +1,7 @@
 // Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu.
 
-#ifndef INCLUDE_CLIENT_HPP_
-#define INCLUDE_CLIENT_HPP_
+#ifndef INCLUDE_TCPCLIENT_HPP_
+#define INCLUDE_TCPCLIENT_HPP_
 
 #include <iostream>
 #include <memory>
@@ -19,9 +19,9 @@
 
 using boost::asio::ip::tcp;
 
-class Client {
+class TCPClient {
  public:
-  explicit Client(boost::asio::io_context &io_context, int num_servers,
+  explicit TCPClient(boost::asio::io_context &io_context, int num_servers,
     int drop_rate, bool kill_servers,
     const std::vector<KVStore::AMOCommand> &workload);
 
@@ -58,4 +58,4 @@ class Client {
   boost::asio::steady_timer write_timer_;
 };
 
-#endif  // INCLUDE_CLIENT_HPP_
+#endif  // INCLUDE_TCPCLIENT_HPP_
