@@ -11,26 +11,38 @@ UDPServer::UDPServer(boost::asio::io_context &io_context, int port)
   StartRead();
 }
 
+std::string UDPServer::GetServerName() const {
+  return server_name_;
+}
+
+int UDPServer::GetNumServers() const {
+  return servers_.size();
+}
+
+Status UDPServer::GetServerStatus() const {
+  return status_;
+}
+
 void UDPServer::StartRead() {
-  socket_.async_receive_from(boost::asio::buffer(recv_buffer_),
-      remote_endpoint_, boost::bind(&UDPServer::HandleRead, this,
-        boost::asio::placeholders::error,
+  auto session = UDPSession::Create();
+  socket_.async_receive_from(boost::asio::buffer(session->GetRecvBuffer()),
+      session->GetRemoteEndpoint(), boost::bind(&UDPServer::HandleRead, this,
+        session, boost::asio::placeholders::error,
         boost::asio::placeholders::bytes_transferred));
 }
 
-void UDPServer::HandleRead(const boost::system::error_code &ec,
+void UDPServer::HandleRead(UDPSession::session session,
+    const boost::system::error_code &ec,
     std::size_t bytes_transferred) {
   if (!ec) {
-    auto message = std::string(&recv_buffer_[0],
-        &recv_buffer_[0] + bytes_transferred);
+    auto buffer = session->GetRecvBuffer();
+    auto remote_endpoint = session->GetRemoteEndpoint();
+    auto message = std::string(&buffer[0],
+        &buffer[0] + bytes_transferred);
     std::cout << "Received message: " << message << std::endl;
 
     std::string response = "Hello, Client!";
-
-    socket_.async_send_to(boost::asio::buffer(response), remote_endpoint_,
-        boost::bind(&UDPServer::HandleSend, this,
-          boost::asio::placeholders::error,
-          boost::asio::placeholders::bytes_transferred));
+    StartWrite(response, remote_endpoint);
 
     StartRead();
   } else {
@@ -38,8 +50,33 @@ void UDPServer::HandleRead(const boost::system::error_code &ec,
   }
 }
 
-void UDPServer::HandleSend(const boost::system::error_code &ec,
-    std::size_t bytes_transferred) {}
+void UDPServer::StartWrite(const std::string &data, udp::endpoint &endpoint) {
+  socket_.async_send_to(boost::asio::buffer(data), endpoint,
+      boost::bind(&UDPServer::HandleWrite, this,
+        boost::asio::placeholders::error,
+        boost::asio::placeholders::bytes_transferred));
+}
+
+void UDPServer::HandleWrite(const boost::system::error_code &ec,
+    std::size_t bytes_transferred) {
+  std::cout << "Wrote " << bytes_transferred << " bytes" << std::endl;
+}
+
+void UDPServer::Handle(const std::string &data, udp::endpoint &endpoint) {
+}
+
+void UDPServer::Broadcast(const std::string &data) {}
+
+void UDPServer::Deliver(const std::string &data,
+    const std::string &server_name) {}
+
+std::string UDPServer::Owner(int instance) {}
+
+void UDPServer::OnSuggestion(int instance) {}
+
+void UDPServer::OnSuspect(const std::string &server) {}
+
+void UDPServer::OnLearned(int instance, const KVStore::AMOCommand &value) {}
 
 int main(int argc, char **argv) {
   if (argc != 2) {

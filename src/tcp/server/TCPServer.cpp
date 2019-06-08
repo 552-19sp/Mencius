@@ -310,7 +310,7 @@ void TCPServer::OnSuggestion(int instance) {
   }
 }
 
-void TCPServer::OnSuspect(std::string server) {
+void TCPServer::OnSuspect(const std::string &server) {
   for (int i = expected_; i < index_; i++) {
     auto owner = Owner(i);
     if (owner.compare(server) == 0 && !Learned(i)) {
@@ -374,7 +374,7 @@ void TCPServer::CheckCommit() {
   std::cout << "  end of CheckCommit. expected = " << expected_ << std::endl;
 }
 
-void TCPServer::OnLearned(int instance, KVStore::AMOCommand &value) {
+void TCPServer::OnLearned(int instance, const KVStore::AMOCommand &value) {
   std::cout << "OnLearned, instance = " << instance << std::endl;
 
   auto instance_owner = Owner(instance);

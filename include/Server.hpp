@@ -34,8 +34,8 @@ class Server {
   // unused instances prior to i this server owns.
   virtual void OnSuggestion(int instance) = 0;
   // Called when the given server is suspected of being offline.
-  virtual void OnSuspect(std::string server) = 0;
-  virtual void OnLearned(int instance, KVStore::AMOCommand &value) = 0;
+  virtual void OnSuspect(const std::string &server) = 0;
+  virtual void OnLearned(int instance, const KVStore::AMOCommand &value) = 0;
 };
 
 #endif  // INCLUDE_SERVER_HPP_

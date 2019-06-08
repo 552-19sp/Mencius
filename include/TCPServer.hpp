@@ -79,8 +79,8 @@ class TCPServer : public Server {
   std::string Owner(int instance);
 
   void OnSuggestion(int instance);
-  void OnSuspect(std::string server);
-  void OnLearned(int instance, KVStore::AMOCommand &value);
+  void OnSuspect(const std::string &server);
+  void OnLearned(int instance, const KVStore::AMOCommand &value);
 
   // TODO(ljoswiak): Clean up app_ on object destruction
 

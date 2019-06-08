@@ -16,10 +16,10 @@
 #include "ServerAccept.hpp"
 #include "Status.hpp"
 
+using boost::asio::ip::tcp;
+
 class TCPServer;
 class Handler;
-
-using boost::asio::ip::tcp;
 
 class TCPConnection
   : public boost::enable_shared_from_this<TCPConnection> {
