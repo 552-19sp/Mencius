@@ -7,6 +7,8 @@
 
 #include <boost/asio.hpp>
 
+#include "AMOCommand.hpp"
+
 using boost::asio::ip::udp;
 
 const int kBufferSize = 1024;
@@ -17,7 +19,7 @@ class UDPClient {
       const std::string &host, const std::string &port);
   ~UDPClient();
 
-  void Send(const std::string &message);
+  void Send(const KVStore::AMOCommand &command);
 
  private:
   void StartRead();

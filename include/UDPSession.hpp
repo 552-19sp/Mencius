@@ -4,6 +4,7 @@
 #define INCLUDE_UDPSESSION_HPP_
 
 #include <memory>
+#include <string>
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
@@ -20,8 +21,8 @@ class UDPSession : public boost::enable_shared_from_this<UDPSession> {
   typedef std::shared_ptr<UDPSession> session;
 
   static session Create();
-
-  UDPSession();
+  static session Create(boost::asio::io_context &io_context,
+      const std::string &host, const std::string &port);
 
   udp::endpoint & GetRemoteEndpoint() {
     return remote_endpoint_;
@@ -32,6 +33,10 @@ class UDPSession : public boost::enable_shared_from_this<UDPSession> {
   }
 
  private:
+  UDPSession();
+  UDPSession(boost::asio::io_context &io_context,
+      const std::string &host, const std::string &port);
+
   udp::endpoint remote_endpoint_;
   std::array<char, kBufferSize> recv_buffer_;
 };

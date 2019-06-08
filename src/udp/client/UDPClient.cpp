@@ -6,6 +6,10 @@
 
 #include <boost/bind.hpp>
 
+#include "Action.hpp"
+#include "Message.hpp"
+#include "Request.hpp"
+
 UDPClient::UDPClient(boost::asio::io_context &io_context,
     const std::string &host, const std::string &port)
     : socket_(io_context, udp::endpoint(udp::v4(), 0)) {
@@ -20,7 +24,12 @@ UDPClient::~UDPClient() {
   socket_.close();
 }
 
-void UDPClient::Send(const std::string &message) {
+void UDPClient::Send(const KVStore::AMOCommand &command) {
+  auto request = message::Request(command);
+  auto message = message::Message(request.Encode(),
+      message::MessageType::kRequest).Encode();
+  std::cout << "Sending request to server" << std::endl;
+
   socket_.send_to(boost::asio::buffer(message, message.size()),
       remote_endpoint_);
 }
@@ -49,7 +58,9 @@ int main() {
   boost::asio::io_context io_context;
   UDPClient c(io_context, "127.0.0.1", "11111");
 
-  c.Send("Hello, World!");
+  auto command = KVStore::AMOCommand(0, "foo", "bar",
+      KVStore::Action::kPut);
+  c.Send(command);
 
   io_context.run();
 
