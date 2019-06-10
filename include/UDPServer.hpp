@@ -46,14 +46,26 @@ class UDPServer : public Server {
 
   void HandleRequest(const message::Request &m,
       UDPSession::session session);
+  void HandlePropose(const message::Propose &m,
+      const std::string &server_name);
+  void HandleAccept(const message::Accept &m,
+      const std::string &server_name);
+  void HandleLearn(const message::Learn &m,
+      const std::string &server_name);
 
   std::string Owner(int instance);
+
+  std::shared_ptr<Round> GetRound(int instance);
 
   void OnSuggestion(int instance);
   void OnSuspect(const std::string &server);
   void OnLearned(int instance, const KVStore::AMOCommand &value);
 
+
  private:
+  std::shared_ptr<KVStore::AMOCommand> Learned(int instance);
+  void CheckCommit();
+
   boost::asio::io_context &io_context_;
   udp::socket socket_;
   std::string server_name_;

@@ -9,15 +9,20 @@
 #include "Action.hpp"
 #include "Message.hpp"
 #include "Request.hpp"
+#include "Response.hpp"
+#include "Utilities.hpp"
 
 UDPClient::UDPClient(boost::asio::io_context &io_context,
-    const std::string &host, const std::string &port)
-    : socket_(io_context, udp::endpoint(udp::v4(), 0)) {
+    const std::string &host, const std::string &port,
+    const std::vector<KVStore::AMOCommand> &workload)
+    : socket_(io_context, udp::endpoint(udp::v4(), 0)),
+      workload_(workload) {
   udp::resolver r(io_context);
   remote_endpoint_ = *r.resolve(udp::v4(), host, port);
   std::cout << "Remote endpoint: " << remote_endpoint_ << std::endl;
 
   StartRead();
+  ProcessWorkload();
 }
 
 UDPClient::~UDPClient() {
@@ -46,7 +51,16 @@ void UDPClient::HandleRead(const boost::system::error_code &ec,
   if (!ec) {
     auto message = std::string(&recv_buffer_[0],
         &recv_buffer_[0] + bytes_transferred);
-    std::cout << "Received message: " << message << std::endl;
+    auto m = message::Message::Decode(message);
+    if (m.GetMessageType() == message::MessageType::kResponse) {
+      auto response = message::Response::Decode(m.GetEncodedMessage());
+      auto value = response.GetResponse().GetValue();
+      std::cout << "Received reply. Original command: "
+          << response.GetResponse().GetCommand() << std::endl;
+      std::cout << " Value: " << value << std::endl;
+
+      ProcessWorkload();
+    }
 
     StartRead();
   } else {
@@ -54,9 +68,27 @@ void UDPClient::HandleRead(const boost::system::error_code &ec,
   }
 }
 
-int main() {
+void UDPClient::ProcessWorkload() {
+  if (workload_.size() == 0) {
+    std::cout << "no workload" << std::endl;
+    exit(EXIT_SUCCESS);
+  }
+
+  auto command = workload_.back();
+  workload_.pop_back();
+  Send(command);
+}
+
+int main(int argc, char **argv) {
+  if (argc != 2) {
+    std::cerr << "Usage: " << argv[0] << " <operations>" << std::endl;
+    return 0;
+  }
+
+  auto workload = Utilities::ParseOperations(argv[1]);
+
   boost::asio::io_context io_context;
-  UDPClient c(io_context, "127.0.0.1", "11111");
+  UDPClient c(io_context, "127.0.0.1", "11111", workload);
 
   auto command = KVStore::AMOCommand(0, "foo", "bar",
       KVStore::Action::kPut);

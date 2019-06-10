@@ -4,6 +4,7 @@
 #define INCLUDE_UDPCLIENT_HPP_
 
 #include <string>
+#include <vector>
 
 #include <boost/asio.hpp>
 
@@ -16,7 +17,8 @@ const int kBufferSize = 1024;
 class UDPClient {
  public:
   UDPClient(boost::asio::io_context &io_context,
-      const std::string &host, const std::string &port);
+      const std::string &host, const std::string &port,
+      const std::vector<KVStore::AMOCommand> &workload);
   ~UDPClient();
 
   void Send(const KVStore::AMOCommand &command);
@@ -26,9 +28,12 @@ class UDPClient {
   void HandleRead(const boost::system::error_code &ec,
       std::size_t bytes_transferred);
 
+  void ProcessWorkload();
+
   udp::socket socket_;
   udp::endpoint remote_endpoint_;
   std::array<char, kBufferSize> recv_buffer_;
+  std::vector<KVStore::AMOCommand> workload_;
 };
 
 #endif  // INCLUDE_UDPCLIENT_HPP_
