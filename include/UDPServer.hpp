@@ -6,12 +6,14 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <random>
 #include <tuple>
 #include <vector>
 
 #include <boost/asio.hpp>
 
 #include "AMOStore.hpp"
+#include "DropRate.hpp"
 #include "Heartbeat.hpp"
 #include "Request.hpp"
 #include "Round.hpp"
@@ -68,7 +70,12 @@ class UDPServer : public Server {
 
 
  private:
+  // Returns true if the message should be dropped, based on a
+  // probability calculated using the drop rate.
+  bool DropMessage();
+
   void HandleHeartbeat(const message::Heartbeat &m);
+  void HandleDropRate(const message::DropRate &m);
 
   std::shared_ptr<KVStore::AMOCommand> Learned(int instance);
   void CheckCommit();
@@ -93,6 +100,9 @@ class UDPServer : public Server {
   // since last ping.
   std::unordered_map<std::string, int> pings_;
   Status status_;
+  int drop_rate_;
+  std::default_random_engine generator_;
+  std::uniform_int_distribution<int> distribution_;
 
   // Mencius state.
   std::unordered_map<int, UDPSession::session> clients_;

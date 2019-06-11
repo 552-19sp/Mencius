@@ -24,6 +24,7 @@ UDPServer::UDPServer(boost::asio::io_context &io_context, int port,
       heartbeat_check_timer_(io_context),
       app_(new KVStore::AMOStore()),
       status_(Status::kOnline),
+      drop_rate_(0),
       expected_(0) {
   int counter = 0;
   for (auto tuple : servers) {
@@ -46,6 +47,9 @@ UDPServer::UDPServer(boost::asio::io_context &io_context, int port,
   }
 
   std::cout << "This server's name is " << server_name_ << std::endl;
+
+  generator_ = std::default_random_engine();
+  distribution_ = std::uniform_int_distribution<int>(1, 100);
 
   heartbeat_timer_.expires_after(
       std::chrono::milliseconds(kHeartbeatTimeoutMillis));
@@ -173,14 +177,21 @@ void UDPServer::Handle(const std::string &data, UDPSession::session session) {
   }
 }
 
+bool UDPServer::DropMessage() {
+  int random = distribution_(generator_);
+  return random <= drop_rate_;
+}
+
 void UDPServer::Broadcast(const std::string &data) {
   if (status_ == Status::kOnline) {
     for (auto server : servers_) {
-      auto server_name = server.first;
-      if (server_name.compare(server_name_) == 0) {
-        Handle(data, nullptr);
-      } else {
-        Deliver(data, server_name);
+      if (!DropMessage()) {
+        auto server_name = server.first;
+        if (server_name.compare(server_name_) == 0) {
+          Handle(data, nullptr);
+        } else {
+          Deliver(data, server_name);
+        }
       }
     }
   }
@@ -188,21 +199,25 @@ void UDPServer::Broadcast(const std::string &data) {
 
 void UDPServer::Deliver(const std::string &data,
     const std::string &server_name) {
-  auto tuple = servers_[server_name];
-  auto host = std::get<0>(tuple);
-  auto port = std::get<1>(tuple);
+  if (!DropMessage()) {
+    auto tuple = servers_[server_name];
+    auto host = std::get<0>(tuple);
+    auto port = std::get<1>(tuple);
 
-  auto session = UDPSession::Create(io_context_, host, port);
-  StartWrite(data, session->GetRemoteEndpoint());
+    auto session = UDPSession::Create(io_context_, host, port);
+    StartWrite(data, session->GetRemoteEndpoint());
+  }
 }
 
 void UDPServer::Deliver(const std::string &data,
     UDPSession::session session) {
   if (status_ == Status::kOnline) {
-    if (!session) {
-      Handle(data, nullptr);
-    } else {
-      StartWrite(data, session->GetRemoteEndpoint());
+    if (!DropMessage()) {
+      if (!session) {
+        Handle(data, nullptr);
+      } else {
+        StartWrite(data, session->GetRemoteEndpoint());
+      }
     }
   }
 }
@@ -261,6 +276,10 @@ void UDPServer::HandleLearn(const message::Learn &m,
     const std::string &server_name) {
   auto round = GetRound(m.GetInstance());
   round->HandleLearn(m, server_name);
+}
+
+void UDPServer::HandleDropRate(const message::DropRate &m) {
+  drop_rate_ = m.GetDropRate();
 }
 
 std::string UDPServer::Owner(int instance) {
