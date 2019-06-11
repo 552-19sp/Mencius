@@ -25,7 +25,7 @@ UDPClient::UDPClient(boost::asio::io_context &io_context,
       retry_timer_(io_context),
       workload_(workload),
       num_servers_(num_servers),
-      server_drop_rate_(0),
+      server_drop_rate_(drop_rate),
       kill_servers_(kill_servers) {
   udp::resolver r(io_context);
   if (num_servers == 3) {
@@ -142,6 +142,12 @@ void UDPClient::SetServerDropRate() {
   auto command = std::make_shared<KVStore::AMOCommand>(0, drop_rate, "",
       KVStore::Action::kSetDropRate);
   command_ = command.get();
+
+  retry_timer_.expires_after(
+      std::chrono::milliseconds(kRetryTimeoutMillis));
+  retry_timer_.async_wait(
+      boost::bind(&UDPClient::RetryTimer, this, command_->GetSeqNum()));
+
   Send();
 }
 
