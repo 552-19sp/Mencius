@@ -164,7 +164,8 @@ int main(int argc, char **argv) {
   auto workload = Utilities::ParseOperations(argv[4]);
 
   boost::asio::io_context io_context;
-  UDPClient c(io_context, workload, num_servers, server_drop_rate, kill_servers);
+  UDPClient c(io_context, workload, num_servers, server_drop_rate,
+      kill_servers);
 
   io_context.run();
 

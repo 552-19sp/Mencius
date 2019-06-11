@@ -410,7 +410,8 @@ void UDPServer::CheckCommit() {
           status_ = Status::kOnline;
         }
       } else if (learned->GetAction() == KVStore::Action::kSetDropRate) {
-        std::cout << "  setting drop rate to " << learned->GetKey() << std::endl;
+        std::cout << "  setting drop rate to " << learned->GetKey()
+            << std::endl;
         drop_rate_ = std::stoi(learned->GetKey());
       }
 
