@@ -44,7 +44,9 @@ AMOResponse AMOStore::Execute(const AMOCommand &command) {
       default:
         std::cerr << "KVStore: unrecognized action: "
             << command.GetAction() << std::endl;
-        exit(EXIT_FAILURE);
+        s = "";
+        break;
+        // exit(EXIT_FAILURE);
     }
 
     prev_[command] = AMOResponse(command, s);

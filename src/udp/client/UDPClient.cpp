@@ -12,7 +12,7 @@
 #include "Response.hpp"
 #include "Utilities.hpp"
 
-const char kThreeReplicaAddr[] = "127.0.0.1";
+const char kThreeReplicaAddr[] = "35.171.129.43";
 const char kFiveReplicaAddr[] = "35.171.129.43";
 const char kReplicaPort[] = "11111";
 
