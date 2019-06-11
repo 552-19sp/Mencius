@@ -15,6 +15,7 @@
 #include "Accept.hpp"
 #include "AMOStore.hpp"
 #include "Channel.hpp"
+#include "Heartbeat.hpp"
 #include "Learn.hpp"
 #include "Message.hpp"
 #include "Request.hpp"
@@ -58,7 +59,7 @@ class TCPServer : public Server {
   void Handle(const std::string &data, TCPConnection::pointer connection);
 
   // Used to establish initial handshake between servers.
-  void HandleServerAccept(const message::ServerAccept &m,
+  void HandleHeartbeat(const message::Heartbeat &m,
     TCPConnection::pointer connection);
 
   // Called when a request is received from a client.

@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 
+#include <chrono>
 #include <iostream>
 
 #include <boost/bind.hpp>
@@ -12,11 +13,15 @@
 #include "Utilities.hpp"
 
 const char kConfigFilePath[] = "config";
+const int kHeartbeatTimeoutMillis = 25;
+const int kHeartbeatCheckTimeoutMillis = 100;
 
 UDPServer::UDPServer(boost::asio::io_context &io_context, int port,
     std::vector<std::tuple<std::string, std::string, std::string>> &servers)
     : io_context_(io_context),
       socket_(io_context, udp::endpoint(udp::v4(), port)),
+      heartbeat_timer_(io_context),
+      heartbeat_check_timer_(io_context),
       app_(new KVStore::AMOStore()),
       status_(Status::kOnline),
       expected_(0) {
@@ -36,10 +41,20 @@ UDPServer::UDPServer(boost::asio::io_context &io_context, int port,
     }
 
     servers_[server_name] = std::make_tuple(server_host, server_port);
+    pings_[server_name] = 0;
     counter++;
   }
 
   std::cout << "This server's name is " << server_name_ << std::endl;
+
+  heartbeat_timer_.expires_after(
+      std::chrono::milliseconds(kHeartbeatTimeoutMillis));
+  heartbeat_timer_.async_wait(
+      boost::bind(&UDPServer::HeartbeatTimer, this));
+
+  heartbeat_check_timer_.expires_after(std::chrono::seconds(7));
+  heartbeat_check_timer_.async_wait(
+      boost::bind(&UDPServer::HeartbeatCheckTimer, this));
 
   StartRead();
 }
@@ -116,12 +131,25 @@ void UDPServer::Handle(const std::string &data, UDPSession::session session) {
     server_name = server_name_;
   }
 
-  std::cout << "Received message from " << server_name << std::endl;
-
   switch (type) {
+    case message::MessageType::kHeartbeat: {
+      auto heartbeat = message::Heartbeat::Decode(encoded);
+      HandleHeartbeat(heartbeat);
+      break;
+    }
     case message::MessageType::kRequest: {
       auto request = message::Request::Decode(encoded);
       HandleRequest(request, session);
+      break;
+    }
+    case message::MessageType::kPrepare: {
+      auto prepare = message::Prepare::Decode(encoded);
+      HandlePrepare(prepare, server_name);
+      break;
+    }
+    case message::MessageType::kPrepareAck: {
+      auto prepare_ack = message::PrepareAck::Decode(encoded);
+      HandlePrepareAck(prepare_ack, server_name);
       break;
     }
     case message::MessageType::kPropose: {
@@ -179,6 +207,11 @@ void UDPServer::Deliver(const std::string &data,
   }
 }
 
+void UDPServer::HandleHeartbeat(const message::Heartbeat &m) {
+  auto server_name = m.GetServerName();
+  pings_[server_name] = 0;
+}
+
 void UDPServer::HandleRequest(const message::Request &m,
     UDPSession::session session) {
   std::cout << "Received request, index = " << index_ << std::endl;
@@ -198,6 +231,18 @@ void UDPServer::HandleRequest(const message::Request &m,
   } else {
     // TODO(ljoswiak): Repropose
   }
+}
+
+void UDPServer::HandlePrepare(const message::Prepare &m,
+    const std::string &server_name) {
+  auto round = GetRound(m.GetInstance());
+  round->HandlePrepare(m, server_name);
+}
+
+void UDPServer::HandlePrepareAck(const message::PrepareAck &m,
+    const std::string &server_name) {
+  auto round = GetRound(m.GetInstance());
+  round->HandlePrepareAck(m, server_name);
 }
 
 void UDPServer::HandlePropose(const message::Propose &m,
@@ -252,7 +297,6 @@ void UDPServer::OnSuggestion(int instance) {
 
 // TODO(ljoswiak): Move to Server parent class
 void UDPServer::OnSuspect(const std::string &server) {
-  // TODO(ljoswiak): Call OnSuspect when timeout occurs?
   for (int i = expected_; i < index_; i++) {
     auto owner = Owner(i);
     if (owner.compare(server) == 0 && !Learned(i)) {
@@ -329,6 +373,33 @@ void UDPServer::CheckCommit() {
     expected_++;
   }
   std::cout << "  end of CheckCommit. expected = " << expected_ << std::endl;
+}
+
+void UDPServer::HeartbeatTimer() {
+  auto heartbeat = message::Heartbeat(server_name_).Encode();
+  auto message = message::Message(heartbeat,
+      message::MessageType::kHeartbeat).Encode();
+  Broadcast(message);
+
+  heartbeat_timer_.expires_after(
+      std::chrono::milliseconds(kHeartbeatTimeoutMillis));
+  heartbeat_timer_.async_wait(
+      boost::bind(&UDPServer::HeartbeatTimer, this));
+}
+
+void UDPServer::HeartbeatCheckTimer() {
+  for (auto &kv : pings_) {
+    kv.second++;
+
+    if (kv.second > 1) {
+      OnSuspect(kv.first);
+    }
+  }
+
+  heartbeat_check_timer_.expires_at(heartbeat_check_timer_.expiry() +
+      std::chrono::milliseconds(kHeartbeatCheckTimeoutMillis));
+  heartbeat_check_timer_.async_wait(
+      boost::bind(&UDPServer::HeartbeatCheckTimer, this));
 }
 
 int main(int argc, char **argv) {

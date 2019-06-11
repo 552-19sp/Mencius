@@ -16,7 +16,7 @@ namespace message {
 enum MessageType {
   kRequest,
   kResponse,
-  kServerSetup,
+  kHeartbeat,
   kPrepare,
   kPrepareAck,
   kPropose,

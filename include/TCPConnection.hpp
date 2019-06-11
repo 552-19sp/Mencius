@@ -13,7 +13,6 @@
 #include <boost/shared_ptr.hpp>
 
 #include "Request.hpp"
-#include "ServerAccept.hpp"
 #include "Status.hpp"
 
 using boost::asio::ip::tcp;

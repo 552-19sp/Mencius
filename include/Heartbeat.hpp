@@ -1,7 +1,7 @@
-// Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu
+// Copyright 2019 Lukas Joswiak, Justin Johnson, Jack Khuu.
 
-#ifndef INCLUDE_SERVERACCEPT_HPP_
-#define INCLUDE_SERVERACCEPT_HPP_
+#ifndef INCLUDE_HEARTBEAT_HPP_
+#define INCLUDE_HEARTBEAT_HPP_
 
 #include <string>
 #include <sstream>
@@ -11,10 +11,10 @@
 
 namespace message {
 
-class ServerAccept {
+class Heartbeat {
  public:
-  ServerAccept();
-  explicit ServerAccept(std::string server_name);
+  Heartbeat();
+  explicit Heartbeat(std::string server_name);
 
   std::string GetServerName() const {
     return server_name_;
@@ -22,7 +22,7 @@ class ServerAccept {
 
   std::string Encode() const;
 
-  static ServerAccept Decode(const std::string &data);
+  static Heartbeat Decode(const std::string &data);
 
  private:
   friend class boost::serialization::access;
@@ -37,4 +37,4 @@ class ServerAccept {
 
 }  // namespace message
 
-#endif  // INCLUDE_SERVERACCEPT_HPP_
+#endif  // INCLUDE_HEARTBEAT_HPP_

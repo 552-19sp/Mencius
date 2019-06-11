@@ -6,7 +6,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "ServerAccept.hpp"
 #include "Response.hpp"
 #include "Utilities.hpp"
 
@@ -93,11 +92,11 @@ void TCPServer::HandleServerConnect(const boost::system::error_code &ec,
     new_connection->Start();
     channel_.Add(new_connection);
 
-    // Send initial ServerAccept with information about this
+    // Send initial heartbeat with information about this
     // server to newly connected server.
-    auto sa = message::ServerAccept(server_name_).Encode();
-    auto encoded = message::Message(sa,
-      message::MessageType::kServerSetup).Encode();
+    auto heartbeat = message::Heartbeat(server_name_).Encode();
+    auto encoded = message::Message(heartbeat,
+      message::MessageType::kHeartbeat).Encode();
     new_connection->Deliver(encoded);
   }
 }
@@ -143,9 +142,9 @@ void TCPServer::Handle(
   }
 
   switch (type) {
-    case message::MessageType::kServerSetup: {
-      auto server_accept = message::ServerAccept::Decode(encoded);
-      HandleServerAccept(server_accept, connection);
+    case message::MessageType::kHeartbeat: {
+      auto server_accept = message::Heartbeat::Decode(encoded);
+      HandleHeartbeat(server_accept, connection);
       break;
     }
     case message::MessageType::kRequest: {
@@ -223,9 +222,9 @@ void TCPServer::Deliver(const std::string &data,
   }
 }
 
-void TCPServer::HandleServerAccept(const message::ServerAccept &m,
+void TCPServer::HandleHeartbeat(const message::Heartbeat &m,
     TCPConnection::pointer connection) {
-  std::cout << "Received ServerAccept" << std::endl;
+  std::cout << "Received Heartbeat" << std::endl;
   connection->SetServerName(m.GetServerName());
   channel_.Add(connection);
 }

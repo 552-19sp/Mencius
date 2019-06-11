@@ -12,6 +12,7 @@
 #include <boost/asio.hpp>
 
 #include "AMOStore.hpp"
+#include "Heartbeat.hpp"
 #include "Request.hpp"
 #include "Round.hpp"
 #include "Status.hpp"
@@ -46,6 +47,10 @@ class UDPServer : public Server {
 
   void HandleRequest(const message::Request &m,
       UDPSession::session session);
+  void HandlePrepare(const message::Prepare &m,
+    const std::string &server_name);
+  void HandlePrepareAck(const message::PrepareAck &m,
+    const std::string &server_name);
   void HandlePropose(const message::Propose &m,
       const std::string &server_name);
   void HandleAccept(const message::Accept &m,
@@ -63,18 +68,30 @@ class UDPServer : public Server {
 
 
  private:
+  void HandleHeartbeat(const message::Heartbeat &m);
+
   std::shared_ptr<KVStore::AMOCommand> Learned(int instance);
   void CheckCommit();
+
+  // Timer handlers.
+  void HeartbeatTimer();
+  void HeartbeatCheckTimer();
 
   boost::asio::io_context &io_context_;
   udp::socket socket_;
   std::string server_name_;
+  boost::asio::steady_timer heartbeat_timer_;
+  boost::asio::steady_timer heartbeat_check_timer_;
 
   KVStore::AMOStore *app_;
 
-  // Map of server name -> tuple(hostname, port) for other servers
+  // Map of server name -> tuple(hostname, port) for other servers.
   std::unordered_map<std::string, std::tuple<std::string,
       std::string>> servers_;
+
+  // Map of server name -> number of heartbeat check timers
+  // since last ping.
+  std::unordered_map<std::string, int> pings_;
   Status status_;
 
   // Mencius state.
