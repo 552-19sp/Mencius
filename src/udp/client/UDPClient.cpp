@@ -95,6 +95,9 @@ void UDPClient::HandleRead(const boost::system::error_code &ec,
 
         ProcessWorkload();
       }
+    } else {
+      std::cout << "Got message response of type "
+          << m.GetMessageType() << std::endl;
     }
 
     StartRead();
@@ -113,6 +116,9 @@ void UDPClient::RetryTimer(int seq_num) {
         std::chrono::milliseconds(kRetryTimeoutMillis));
     retry_timer_.async_wait(
         boost::bind(&UDPClient::RetryTimer, this, seq_num));
+  } else {
+    std::cout << "Not resetting retry timer, command seq num: "
+        << command_->GetSeqNum() << ", seq num: " << seq_num << std::endl;
   }
 }
 
@@ -122,8 +128,9 @@ void UDPClient::ProcessWorkload() {
     exit(EXIT_SUCCESS);
   }
 
+  std::cout << "Process workload" << std::endl;
   command_ = &workload_.back();
-  command_->SetSeqNum(command_->GetSeqNum() + 1);
+  // command_->SetSeqNum(command_->GetSeqNum() + 1);
   workload_.pop_back();
 
   retry_timer_.expires_after(
@@ -139,9 +146,9 @@ void UDPClient::SetServerDropRate() {
       << server_drop_rate_ << std::endl;
 
   std::string drop_rate = std::to_string(server_drop_rate_);
-  auto command = std::make_shared<KVStore::AMOCommand>(0, drop_rate, "",
+  command_ = new KVStore::AMOCommand(9999, drop_rate, "",
       KVStore::Action::kSetDropRate);
-  command_ = command.get();
+  std::cout << "  seq num = " << command_->GetSeqNum() << std::endl;
 
   retry_timer_.expires_after(
       std::chrono::milliseconds(kRetryTimeoutMillis));

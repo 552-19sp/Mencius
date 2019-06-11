@@ -199,13 +199,15 @@ void UDPServer::Broadcast(const std::string &data) {
 
 void UDPServer::Deliver(const std::string &data,
     const std::string &server_name) {
-  if (!DropMessage()) {
-    auto tuple = servers_[server_name];
-    auto host = std::get<0>(tuple);
-    auto port = std::get<1>(tuple);
+  if (status_ == Status::kOnline) {
+    if (!DropMessage()) {
+      auto tuple = servers_[server_name];
+      auto host = std::get<0>(tuple);
+      auto port = std::get<1>(tuple);
 
-    auto session = UDPSession::Create(io_context_, host, port);
-    StartWrite(data, session->GetRemoteEndpoint());
+      auto session = UDPSession::Create(io_context_, host, port);
+      StartWrite(data, session->GetRemoteEndpoint());
+    }
   }
 }
 
@@ -429,6 +431,11 @@ void UDPServer::CheckCommit() {
         Deliver(encoded, client_session);
         clients_.erase(expected_);
       }
+
+      if (learned->GetAction() == KVStore::Action::kSetDropRate) {
+        ResetState();
+        return;
+      }
     } else {
       std::cout << "  committing no-op for instance " << expected_ << std::endl;
     }
@@ -463,6 +470,21 @@ void UDPServer::HeartbeatCheckTimer() {
       std::chrono::milliseconds(kHeartbeatCheckTimeoutMillis));
   heartbeat_check_timer_.async_wait(
       boost::bind(&UDPServer::HeartbeatCheckTimer, this));
+}
+
+void UDPServer::ResetState() {
+  std::cout << "======= resetting state ========" << std::endl;
+  heartbeat_timer_.cancel();
+  app_ = new KVStore::AMOStore();
+  status_ = Status::kOnline;
+  drop_rate_ = 0;
+
+  clients_.clear();
+  rounds_.clear();
+  proposed_.clear();
+  executed_.clear();
+  index_ = index_ % servers_.size();
+  expected_ = 0;
 }
 
 int main(int argc, char **argv) {

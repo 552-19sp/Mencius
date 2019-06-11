@@ -84,6 +84,8 @@ class UDPServer : public Server {
   void HeartbeatTimer();
   void HeartbeatCheckTimer();
 
+  void ResetState();
+
   boost::asio::io_context &io_context_;
   udp::socket socket_;
   std::string server_name_;
