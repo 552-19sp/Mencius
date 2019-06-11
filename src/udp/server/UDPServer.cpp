@@ -24,7 +24,7 @@ UDPServer::UDPServer(boost::asio::io_context &io_context, int port,
       heartbeat_check_timer_(io_context),
       app_(new KVStore::AMOStore()),
       status_(Status::kOnline),
-      drop_rate_(2),
+      drop_rate_(0),
       expected_(0) {
   int counter = 0;
   for (auto tuple : servers) {
@@ -49,7 +49,7 @@ UDPServer::UDPServer(boost::asio::io_context &io_context, int port,
   std::cout << "This server's name is " << server_name_ << std::endl;
 
   generator_ = std::default_random_engine();
-  distribution_ = std::uniform_int_distribution<int>(1, 100);
+  distribution_ = std::uniform_int_distribution<int>(1, 1000);
 
   heartbeat_timer_.expires_after(
       std::chrono::milliseconds(kHeartbeatTimeoutMillis));
@@ -319,10 +319,6 @@ void UDPServer::HandleLearn(const message::Learn &m,
   round->HandleLearn(m, server_name);
 }
 
-void UDPServer::HandleDropRate(const message::DropRate &m) {
-  drop_rate_ = m.GetDropRate();
-}
-
 std::string UDPServer::Owner(int instance) {
   auto server_addresses = Utilities::ReadConfig(kConfigFilePath);
   int index = instance % servers_.size();
@@ -413,6 +409,9 @@ void UDPServer::CheckCommit() {
         if (server.compare(server_name_) == 0) {
           status_ = Status::kOnline;
         }
+      } else if (learned->GetAction() == KVStore::Action::kSetDropRate) {
+        std::cout << "  setting drop rate to " << learned->GetKey() << std::endl;
+        drop_rate_ = std::stoi(learned->GetKey());
       }
 
       auto amo_response = app_->Execute(*learned);

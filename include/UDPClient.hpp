@@ -17,20 +17,23 @@ const int kBufferSize = 1024;
 class UDPClient {
  public:
   UDPClient(boost::asio::io_context &io_context,
-      const std::string &host, const std::string &port,
-      const std::vector<KVStore::AMOCommand> &workload);
+      const std::vector<KVStore::AMOCommand> &workload,
+      int num_servers, int drop_rate, bool kill_servers);
   ~UDPClient();
 
   void Send();
 
  private:
+  void HandleSend(const boost::system::error_code &ec,
+      std::size_t bytes_transferred);
   void StartRead();
   void HandleRead(const boost::system::error_code &ec,
       std::size_t bytes_transferred);
 
-  void ProcessWorkload();
-
   void RetryTimer(int seq_num);
+
+  void ProcessWorkload();
+  void SetServerDropRate();
 
   udp::socket socket_;
   udp::endpoint remote_endpoint_;
@@ -39,6 +42,10 @@ class UDPClient {
   std::vector<KVStore::AMOCommand> workload_;
 
   KVStore::AMOCommand *command_;
+
+  int num_servers_;
+  int server_drop_rate_;
+  bool kill_servers_;
 };
 
 #endif  // INCLUDE_UDPCLIENT_HPP_

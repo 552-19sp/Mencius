@@ -68,4 +68,8 @@ Action AMOCommand::GetAction() const {
   return action_;
 }
 
+void AMOCommand::SetSeqNum(int seq_num) {
+  seq_num_ = seq_num;
+}
+
 }  // namespace KVStore

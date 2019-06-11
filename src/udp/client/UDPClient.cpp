@@ -12,23 +12,36 @@
 #include "Response.hpp"
 #include "Utilities.hpp"
 
+const char kThreeReplicaAddr[] = "127.0.0.1";
+const char kFiveReplicaAddr[] = "35.171.129.43";
+const char kReplicaPort[] = "11111";
+
 const int kRetryTimeoutMillis = 100;
 
 UDPClient::UDPClient(boost::asio::io_context &io_context,
-    const std::string &host, const std::string &port,
-    const std::vector<KVStore::AMOCommand> &workload)
+    const std::vector<KVStore::AMOCommand> &workload,
+    int num_servers, int drop_rate, bool kill_servers)
     : socket_(io_context, udp::endpoint(udp::v4(), 0)),
       retry_timer_(io_context),
-      workload_(workload) {
+      workload_(workload),
+      num_servers_(num_servers),
+      server_drop_rate_(0),
+      kill_servers_(kill_servers) {
   udp::resolver r(io_context);
-  remote_endpoint_ = *r.resolve(udp::v4(), host, port);
+  if (num_servers == 3) {
+    remote_endpoint_ = *r.resolve(udp::v4(), kThreeReplicaAddr, kReplicaPort);
+  } else if (num_servers == 5) {
+    remote_endpoint_ = *r.resolve(udp::v4(), kFiveReplicaAddr, kReplicaPort);
+  } else {
+    std::cerr << "unsupported number of replicas" << std::endl;
+  }
   std::cout << "Remote endpoint: " << remote_endpoint_ << std::endl;
 
   // Reverse workload (client reads starting from the end).
   std::reverse(workload_.begin(), workload_.end());
 
   StartRead();
-  ProcessWorkload();
+  SetServerDropRate();
 }
 
 UDPClient::~UDPClient() {
@@ -42,8 +55,17 @@ void UDPClient::Send() {
   std::cout << "Sending request to server with seq num "
       << command_->GetSeqNum() << std::endl;
 
-  socket_.send_to(boost::asio::buffer(message, message.size()),
-      remote_endpoint_);
+  socket_.async_send_to(boost::asio::buffer(message, message.size()),
+      remote_endpoint_, boost::bind(&UDPClient::HandleSend, this,
+        boost::asio::placeholders::error,
+        boost::asio::placeholders::bytes_transferred));
+}
+
+void UDPClient::HandleSend(const boost::system::error_code &ec,
+    std::size_t bytes_transferred) {
+  if (ec) {
+    std::cerr << "Send error: " << ec.message() << std::endl;
+  }
 }
 
 void UDPClient::StartRead() {
@@ -81,23 +103,6 @@ void UDPClient::HandleRead(const boost::system::error_code &ec,
   }
 }
 
-void UDPClient::ProcessWorkload() {
-  if (workload_.size() == 0) {
-    std::cout << "no workload" << std::endl;
-    exit(EXIT_SUCCESS);
-  }
-
-  command_ = &workload_.back();
-  workload_.pop_back();
-
-  retry_timer_.expires_after(
-      std::chrono::milliseconds(kRetryTimeoutMillis));
-  retry_timer_.async_wait(
-      boost::bind(&UDPClient::RetryTimer, this, command_->GetSeqNum()));
-
-  Send();
-}
-
 void UDPClient::RetryTimer(int seq_num) {
   if (command_ && command_->GetSeqNum() == seq_num) {
     // Outstading request, resend.
@@ -111,16 +116,49 @@ void UDPClient::RetryTimer(int seq_num) {
   }
 }
 
+void UDPClient::ProcessWorkload() {
+  if (workload_.size() == 0) {
+    std::cout << "no workload" << std::endl;
+    exit(EXIT_SUCCESS);
+  }
+
+  command_ = &workload_.back();
+  command_->SetSeqNum(command_->GetSeqNum() + 1);
+  workload_.pop_back();
+
+  retry_timer_.expires_after(
+      std::chrono::milliseconds(kRetryTimeoutMillis));
+  retry_timer_.async_wait(
+      boost::bind(&UDPClient::RetryTimer, this, command_->GetSeqNum()));
+
+  Send();
+}
+
+void UDPClient::SetServerDropRate() {
+  std::cout << "sending server drop rate message, drop rate = "
+      << server_drop_rate_ << std::endl;
+
+  std::string drop_rate = std::to_string(server_drop_rate_);
+  auto command = std::make_shared<KVStore::AMOCommand>(0, drop_rate, "",
+      KVStore::Action::kSetDropRate);
+  command_ = command.get();
+  Send();
+}
+
 int main(int argc, char **argv) {
-  if (argc != 2) {
-    std::cerr << "Usage: " << argv[0] << " <operations>" << std::endl;
+  if (argc != 5) {
+    std::cerr << "Usage: " << argv[0] << " <number-of-servers> " <<
+      " <server-drop-rate> <random-failure-bit> <operations>" << std::endl;
     return 0;
   }
 
-  auto workload = Utilities::ParseOperations(argv[1]);
+  int num_servers = atoi(argv[1]);
+  int server_drop_rate = atoi(argv[2]);
+  bool kill_servers = atoi(argv[3]) == 1;
+  auto workload = Utilities::ParseOperations(argv[4]);
 
   boost::asio::io_context io_context;
-  UDPClient c(io_context, "127.0.0.1", "11111", workload);
+  UDPClient c(io_context, workload, num_servers, server_drop_rate, kill_servers);
 
   io_context.run();
 

@@ -10,7 +10,8 @@ enum Action {
   kGet,
   kNoOp,
   kKillServer,
-  kReviveServer
+  kReviveServer,
+  kSetDropRate
 };
 }  // namespace KVStore
 

@@ -38,6 +38,7 @@ AMOResponse AMOStore::Execute(const AMOCommand &command) {
         break;
       case Action::kKillServer:
       case Action::kReviveServer:
+      case Action::kSetDropRate:
         s = "";
         break;
       default:

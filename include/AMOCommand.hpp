@@ -30,6 +30,8 @@ class AMOCommand {
   std::string GetValue() const;
   Action GetAction() const;
 
+  void SetSeqNum(int seq_num);
+
  private:
   friend class boost::serialization::access;
 
