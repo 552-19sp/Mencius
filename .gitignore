@@ -35,6 +35,7 @@ bin/
 
 # Editor files
 *.swp
+*.swo
 
 # Tags
 tags

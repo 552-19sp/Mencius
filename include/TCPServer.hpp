@@ -112,6 +112,8 @@ class TCPServer : public Server {
   // nullptr if no learned value exists.
   std::shared_ptr<KVStore::AMOCommand> Learned(int instance);
 
+  void ResetState();
+
   boost::asio::io_context &io_context_;
   std::string port_;
   std::string server_name_;

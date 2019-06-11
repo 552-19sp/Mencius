@@ -332,6 +332,7 @@ void TCPServer::CheckCommit() {
     if (learned->GetAction() != KVStore::Action::kNoOp) {
       // Value is committed. Execute and return to client.
       std::cout << "  committing value for instance " << expected_ << std::endl;
+      std::cout << "  action: " << learned->GetAction() << std::endl;
 
       if (learned->GetAction() == KVStore::Action::kKillServer
           && status_ == Status::kOnline) {
@@ -345,12 +346,25 @@ void TCPServer::CheckCommit() {
         } else {
           OnSuspect(server);
         }
+        expected_++;
+        return;
       } else if (learned->GetAction() == KVStore::Action::kReviveServer
           && status_ == Status::kOffline) {
         auto server = learned->GetKey();
         if (server.compare(server_name_) == 0) {
           status_ = Status::kOnline;
         }
+        ResetState();
+        return;
+      } else if (learned->GetAction() == KVStore::Action::kReviveServer
+          || learned->GetAction() == KVStore::Action::kKillServer) {
+        expected_++;
+
+        if (learned->GetAction() == KVStore::Action::kReviveServer) {
+          ResetState();
+        }
+
+        return;
       }
 
       auto amo_response = app_->Execute(*learned);
@@ -410,6 +424,18 @@ std::string TCPServer::GetServerName(TCPConnection::pointer connection) const {
   } else {
     return GetServerName();
   }
+}
+
+void TCPServer::ResetState() {
+  std::cout << "======= resetting state ========" << std::endl;
+  app_ = new KVStore::AMOStore();
+  status_ = Status::kOnline;
+
+  clients_.clear();
+  rounds_.clear();
+  proposed_.clear();
+  index_ = index_ % servers_.size();
+  expected_ = 0;
 }
 
 int main(int argc, char* argv[]) {

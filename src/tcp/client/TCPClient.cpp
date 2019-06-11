@@ -19,7 +19,7 @@
 
 // TODO(jjohnson): Update this once we have the real cluster addresses
 // and read them from the config here.
-const char kThreeReplicaAddr[] = "35.171.129.43";
+const char kThreeReplicaAddr[] = "127.0.0.1";
 const char kFiveReplicaAddr[] = "35.171.129.43";
 const char kReplicaPort[] = "11111";
 
@@ -99,6 +99,8 @@ void TCPClient::HandleConnect(const boost::system::error_code &ec,
           KVStore::Action::kReviveServer);
       StartWrite(revive);
     }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     SetServerDropRate();
     ProcessWorkload();
