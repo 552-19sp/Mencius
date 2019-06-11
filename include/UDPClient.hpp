@@ -21,7 +21,7 @@ class UDPClient {
       const std::vector<KVStore::AMOCommand> &workload);
   ~UDPClient();
 
-  void Send(const KVStore::AMOCommand &command);
+  void Send();
 
  private:
   void StartRead();
@@ -30,10 +30,15 @@ class UDPClient {
 
   void ProcessWorkload();
 
+  void RetryTimer(int seq_num);
+
   udp::socket socket_;
   udp::endpoint remote_endpoint_;
+  boost::asio::steady_timer retry_timer_;
   std::array<char, kBufferSize> recv_buffer_;
   std::vector<KVStore::AMOCommand> workload_;
+
+  KVStore::AMOCommand *command_;
 };
 
 #endif  // INCLUDE_UDPCLIENT_HPP_

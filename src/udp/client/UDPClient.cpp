@@ -12,14 +12,20 @@
 #include "Response.hpp"
 #include "Utilities.hpp"
 
+const int kRetryTimeoutMillis = 100;
+
 UDPClient::UDPClient(boost::asio::io_context &io_context,
     const std::string &host, const std::string &port,
     const std::vector<KVStore::AMOCommand> &workload)
     : socket_(io_context, udp::endpoint(udp::v4(), 0)),
+      retry_timer_(io_context),
       workload_(workload) {
   udp::resolver r(io_context);
   remote_endpoint_ = *r.resolve(udp::v4(), host, port);
   std::cout << "Remote endpoint: " << remote_endpoint_ << std::endl;
+
+  // Reverse workload (client reads starting from the end).
+  std::reverse(workload_.begin(), workload_.end());
 
   StartRead();
   ProcessWorkload();
@@ -29,11 +35,12 @@ UDPClient::~UDPClient() {
   socket_.close();
 }
 
-void UDPClient::Send(const KVStore::AMOCommand &command) {
-  auto request = message::Request(command);
+void UDPClient::Send() {
+  auto request = message::Request(*command_);
   auto message = message::Message(request.Encode(),
       message::MessageType::kRequest).Encode();
-  std::cout << "Sending request to server" << std::endl;
+  std::cout << "Sending request to server with seq num "
+      << command_->GetSeqNum() << std::endl;
 
   socket_.send_to(boost::asio::buffer(message, message.size()),
       remote_endpoint_);
@@ -54,12 +61,18 @@ void UDPClient::HandleRead(const boost::system::error_code &ec,
     auto m = message::Message::Decode(message);
     if (m.GetMessageType() == message::MessageType::kResponse) {
       auto response = message::Response::Decode(m.GetEncodedMessage());
-      auto value = response.GetResponse().GetValue();
-      std::cout << "Received reply. Original command: "
-          << response.GetResponse().GetCommand() << std::endl;
-      std::cout << " Value: " << value << std::endl;
+      auto command = response.GetResponse().GetCommand();
+      if (command.GetSeqNum() == (*command_).GetSeqNum()) {
+        auto value = response.GetResponse().GetValue();
+        std::cout << "Received reply. Original command: "
+            << command << std::endl;
+        std::cout << " Value: " << value << std::endl;
 
-      ProcessWorkload();
+        retry_timer_.cancel();
+        command_ = nullptr;
+
+        ProcessWorkload();
+      }
     }
 
     StartRead();
@@ -74,9 +87,28 @@ void UDPClient::ProcessWorkload() {
     exit(EXIT_SUCCESS);
   }
 
-  auto command = workload_.back();
+  command_ = &workload_.back();
   workload_.pop_back();
-  Send(command);
+
+  retry_timer_.expires_after(
+      std::chrono::milliseconds(kRetryTimeoutMillis));
+  retry_timer_.async_wait(
+      boost::bind(&UDPClient::RetryTimer, this, command_->GetSeqNum()));
+
+  Send();
+}
+
+void UDPClient::RetryTimer(int seq_num) {
+  if (command_ && command_->GetSeqNum() == seq_num) {
+    // Outstading request, resend.
+    std::cout << "************ Resending command *************" << std::endl;
+    Send();
+
+    retry_timer_.expires_at(retry_timer_.expiry() +
+        std::chrono::milliseconds(kRetryTimeoutMillis));
+    retry_timer_.async_wait(
+        boost::bind(&UDPClient::RetryTimer, this, seq_num));
+  }
 }
 
 int main(int argc, char **argv) {
@@ -89,10 +121,6 @@ int main(int argc, char **argv) {
 
   boost::asio::io_context io_context;
   UDPClient c(io_context, "127.0.0.1", "11111", workload);
-
-  auto command = KVStore::AMOCommand(0, "foo", "bar",
-      KVStore::Action::kPut);
-  c.Send(command);
 
   io_context.run();
 

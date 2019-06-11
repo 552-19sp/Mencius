@@ -108,6 +108,7 @@ class UDPServer : public Server {
   std::unordered_map<int, UDPSession::session> clients_;
   std::unordered_map<int, std::shared_ptr<Round>> rounds_;
   std::unordered_map<int, KVStore::AMOCommand> proposed_;
+  std::unordered_map<int, KVStore::AMOResponse> executed_;
   int index_;
   int expected_;
 };

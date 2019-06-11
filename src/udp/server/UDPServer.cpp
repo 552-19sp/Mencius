@@ -24,7 +24,7 @@ UDPServer::UDPServer(boost::asio::io_context &io_context, int port,
       heartbeat_check_timer_(io_context),
       app_(new KVStore::AMOStore()),
       status_(Status::kOnline),
-      drop_rate_(0),
+      drop_rate_(2),
       expected_(0) {
   int counter = 0;
   for (auto tuple : servers) {
@@ -231,9 +231,25 @@ void UDPServer::HandleRequest(const message::Request &m,
     UDPSession::session session) {
   std::cout << "Received request, index = " << index_ << std::endl;
 
-  if (proposed_.find(index_) == proposed_.end()) {
+  int instance = 0;
+  bool proposed = false;
+  auto command = m.GetCommand();
+  for (auto &kv : proposed_) {
+    if (kv.second == command) {
+      proposed = true;
+      instance = kv.first;
+      break;
+    }
+  }
+
+  int seq_num = command.GetSeqNum();
+  std::cout << "  seq num = " << seq_num << std::endl;
+  std::cout << "  proposed = " << proposed << std::endl;
+  std::cout << "  instance = " << instance << std::endl;
+  std::cout << "  index_ = " << index_ << std::endl;
+  std::cout << "  expected_ = " << expected_ << std::endl;
+  if (!proposed) {
     auto round = std::make_shared<Round>(this, index_);
-    auto command = m.GetCommand();
 
     clients_[index_] = session;
     rounds_[index_] = round;
@@ -245,6 +261,31 @@ void UDPServer::HandleRequest(const message::Request &m,
     index_ += servers_.size();
   } else {
     // TODO(ljoswiak): Repropose
+    std::cout << "REPROPOSE **********" << std::endl;
+    if (instance < expected_) {
+      std::cout << "  already executed, reexecuting and responding"
+          << std::endl;
+      // Already executed the request, re-execute and resend the response.
+      auto learned = rounds_[instance]->GetLearnedValue();
+      auto amo_response = app_->Execute(*learned);
+      auto response = message::Response(amo_response).Encode();
+      auto encoded = message::Message(response,
+          message::MessageType::kResponse).Encode();
+      Deliver(encoded, session);
+    } else {
+      std::cout << "  reproposing" << std::endl;
+
+      if (expected_ < instance) {
+        std::cout << "  retry OnSuggestion, expected_ = " << expected_
+            << ", index_ = " << index_ << std::endl;
+        auto round = GetRound(expected_);
+        round->Skip();
+      }
+
+      // Have not learned a response yet, repropose request.
+      auto round = GetRound(instance);
+      round->Suggest(command);
+    }
   }
 }
 
@@ -346,6 +387,7 @@ void UDPServer::CheckCommit() {
     std::cout << "  expected: " << expected_ << std::endl;
     auto learned = rounds_[expected_]->GetLearnedValue();
     if (!learned) {
+      std::cout << "  haven't learned yet" << std::endl;
       break;
     }
 
@@ -374,6 +416,8 @@ void UDPServer::CheckCommit() {
       }
 
       auto amo_response = app_->Execute(*learned);
+      executed_[expected_] = amo_response;
+
       auto client_session = clients_[expected_];
       if  (client_session) {
         // If client connection is null, this value is being
@@ -400,7 +444,7 @@ void UDPServer::HeartbeatTimer() {
       message::MessageType::kHeartbeat).Encode();
   Broadcast(message);
 
-  heartbeat_timer_.expires_after(
+  heartbeat_timer_.expires_at(heartbeat_timer_.expiry() +
       std::chrono::milliseconds(kHeartbeatTimeoutMillis));
   heartbeat_timer_.async_wait(
       boost::bind(&UDPServer::HeartbeatTimer, this));

@@ -18,6 +18,15 @@ int QuorumSize(int num_servers) {
   return ceil((static_cast<double>(num_servers) + 1) / 2);
 }
 
+void Round::AlreadyLearned(const std::string &server_name) {
+  std::cout << "Already learned a value in instance " << instance_
+      << ", sending to " << server_name << std::endl;
+  auto learn = message::Learn(instance_, *learned_);
+  auto message = message::Message(learn.Encode(),
+      message::MessageType::kLearn).Encode();
+  server_->Deliver(message, server_name);
+}
+
 void Round::Suggest(const KVStore::AMOCommand &v) {
   std::cout << server_->GetServerName() << " suggesting command for instance "
       << instance_ << std::endl;
@@ -28,6 +37,8 @@ void Round::Suggest(const KVStore::AMOCommand &v) {
 }
 
 void Round::Skip() {
+  std::cout << server_->GetServerName() << " sending skip for instance "
+      << instance_ << std::endl;
   auto value = KVStore::AMOCommand();
   Suggest(value);
 }
@@ -50,17 +61,18 @@ void Round::Revoke() {
 void Round::HandlePropose(const message::Propose &m,
     const std::string &server_name) {
   std::cout << server_->GetServerName() << " received propose in instance "
-      << instance_ << std::endl;
+      << instance_ << " for ballot " << m.GetBallotNum() << std::endl;
 
   if (learned_) {
-    // TODO(ljoswiak): Implement
-    std::cout << "  already learned a value, returning" << std::endl;
+    AlreadyLearned(server_name);
     return;
   }
 
   auto ballot_num = m.GetBallotNum();
   auto value = m.GetValue();
 
+  std::cout << "  ballot: " << ballot_num << std::endl;
+  std::cout << "  value: " << value << std::endl;
   if (ballot_num == 0 && value.GetAction() == KVStore::Action::kNoOp) {
     // Learn no-op.
     std::cout << "  learning no-op" << std::endl;
@@ -75,7 +87,14 @@ void Round::HandlePropose(const message::Propose &m,
     accepted_ballot_ = ballot_num;
     accepted_value_ = value;
 
+    std::cout << "  sending accept" << std::endl;
     auto accept = message::Accept(instance_, ballot_num, value);
+    auto message = message::Message(accept.Encode(),
+        message::MessageType::kAccept).Encode();
+    server_->Deliver(message, server_name);
+  } else {
+    // Resend accept.
+    auto accept = message::Accept(instance_, accepted_ballot_, accepted_value_);
     auto message = message::Message(accept.Encode(),
         message::MessageType::kAccept).Encode();
     server_->Deliver(message, server_name);
@@ -85,7 +104,7 @@ void Round::HandlePropose(const message::Propose &m,
 void Round::HandlePrepare(const message::Prepare &m,
     const std::string &server_name) {
   if (learned_) {
-    // TODO(ljoswiak): Implement
+    AlreadyLearned(server_name);
     return;
   }
 
@@ -103,7 +122,7 @@ void Round::HandlePrepare(const message::Prepare &m,
 void Round::HandlePrepareAck(const message::PrepareAck &m,
     const std::string &server_name) {
   if (learned_) {
-    // TODO(ljoswiak): Implement
+    AlreadyLearned(server_name);
     return;
   }
 
@@ -143,7 +162,7 @@ void Round::HandleAccept(const message::Accept &m,
       << instance_ << std::endl;
 
   if (learned_) {
-    // TODO(ljoswiak): Implement
+    AlreadyLearned(server_name);
     return;
   }
 

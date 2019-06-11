@@ -46,6 +46,8 @@ class Round {
       const std::string &server_name);
 
  private:
+  void AlreadyLearned(const std::string &server_name);
+
   Server *server_;
 
   int instance_;
