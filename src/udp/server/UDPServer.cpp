@@ -273,6 +273,8 @@ void UDPServer::HandleRequest(const message::Request &m,
       auto response = message::Response(amo_response).Encode();
       auto encoded = message::Message(response,
           message::MessageType::kResponse).Encode();
+      std::cout << "  session: " << session->GetRemoteEndpoint()
+          << std::endl;
       Deliver(encoded, session);
     } else {
       std::cout << "  reproposing" << std::endl;

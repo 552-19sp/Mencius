@@ -43,6 +43,7 @@ class UDPClient {
 
   KVStore::AMOCommand *command_;
 
+  int *count_;
   int num_servers_;
   int server_drop_rate_;
   bool kill_servers_;

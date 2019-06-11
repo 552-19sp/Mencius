@@ -24,6 +24,7 @@ UDPClient::UDPClient(boost::asio::io_context &io_context,
     : socket_(io_context, udp::endpoint(udp::v4(), 0)),
       retry_timer_(io_context),
       workload_(workload),
+      count_(new int()),
       num_servers_(num_servers),
       server_drop_rate_(drop_rate),
       kill_servers_(kill_servers) {
@@ -81,6 +82,7 @@ void UDPClient::HandleRead(const boost::system::error_code &ec,
     auto message = std::string(&recv_buffer_[0],
         &recv_buffer_[0] + bytes_transferred);
     auto m = message::Message::Decode(message);
+    std::cout << "handleread, type: " << m.GetMessageType() << std::endl;
     if (m.GetMessageType() == message::MessageType::kResponse) {
       auto response = message::Response::Decode(m.GetEncodedMessage());
       auto command = response.GetResponse().GetCommand();
@@ -108,10 +110,17 @@ void UDPClient::HandleRead(const boost::system::error_code &ec,
 
 void UDPClient::RetryTimer(int seq_num) {
   if (command_ && command_->GetSeqNum() == seq_num) {
+    if (*count_ > 3) {
+      ProcessWorkload();
+      return;
+    }
+
     // Outstading request, resend.
     std::cout << "************ Resending command *************" << std::endl;
+    std::cout << "  count: " << *count_ << std::endl;
     Send();
 
+    ++(*count_);
     retry_timer_.expires_at(retry_timer_.expiry() +
         std::chrono::milliseconds(kRetryTimeoutMillis));
     retry_timer_.async_wait(
@@ -133,6 +142,7 @@ void UDPClient::ProcessWorkload() {
   // command_->SetSeqNum(command_->GetSeqNum() + 1);
   workload_.pop_back();
 
+  *count_ = 0;
   retry_timer_.expires_after(
       std::chrono::milliseconds(kRetryTimeoutMillis));
   retry_timer_.async_wait(
@@ -146,10 +156,11 @@ void UDPClient::SetServerDropRate() {
       << server_drop_rate_ << std::endl;
 
   std::string drop_rate = std::to_string(server_drop_rate_);
-  command_ = new KVStore::AMOCommand(9999, drop_rate, "",
+  command_ = new KVStore::AMOCommand(999999, drop_rate, "",
       KVStore::Action::kSetDropRate);
   std::cout << "  seq num = " << command_->GetSeqNum() << std::endl;
 
+  *count_ = 0;
   retry_timer_.expires_after(
       std::chrono::milliseconds(kRetryTimeoutMillis));
   retry_timer_.async_wait(
