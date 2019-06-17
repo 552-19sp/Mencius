@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
   if (argc != 5) {
     std::cerr << "Usage: " << argv[0] << " <number-of-servers> " <<
       " <server-drop-rate> <random-failure-bit> <operations>" << std::endl;
-    return 0;
+    return 1;
   }
 
   int num_servers = atoi(argv[1]);
@@ -249,5 +249,5 @@ int main(int argc, char **argv) {
   }
 
   io_context.run();
-  return 1;
+  return 0;
 }

@@ -114,7 +114,7 @@ void UDPClient::RetryTimer(int seq_num) {
 int main(int argc, char **argv) {
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << " <operations>" << std::endl;
-    return 0;
+    return 1;
   }
 
   auto workload = Utilities::ParseOperations(argv[1]);
@@ -124,5 +124,5 @@ int main(int argc, char **argv) {
 
   io_context.run();
 
-  return 1;
+  return 0;
 }
